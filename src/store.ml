@@ -63,6 +63,8 @@ let add { db; _ } path wasm =
   let+ () =
     hash_or_path ~hash:f
       ~path:(fun path ->
+        (* If the path is empty then just add the contents to the store without
+           associating it with a path *)
         if path = [] then
           Store.Backend.Repo.batch (Store.repo db) (fun contents _ _ ->
               let+ _ = Store.save_contents contents wasm in
@@ -78,14 +80,18 @@ let find t path = hash_or_path ~hash:(find_hash t) ~path:(Store.find t.db) path
 let hash t path =
   hash_or_path ~hash:(fun x -> Lwt.return_some x) ~path:(Store.hash t.db) path
 
+let hash_eq = Irmin.Type.(unstage (equal Store.Hash.t))
+
 let remove { db; _ } path =
   let info = Info.v "Remove %a" (Irmin.Type.pp Store.Path.t) path in
   let hash h =
+    (* Search through the current tree for any contents that match [h] *)
     let rec aux tree path =
       match Store.Tree.destruct tree with
       | `Contents (c, _) ->
           let hash = Store.Tree.Contents.hash c in
-          if hash = h then Store.Tree.remove tree path else Lwt.return tree
+          if hash_eq hash h then Store.Tree.remove tree path
+          else Lwt.return tree
       | `Node _ ->
           let* items = Store.Tree.list tree [] in
           Lwt_list.fold_left_s
