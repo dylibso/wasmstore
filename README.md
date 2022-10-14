@@ -27,13 +27,16 @@ branch.
 - `GET /api/v1/modules/*`
   - Returns a JSON object mapping module paths to their hashes for the
     specified path
+  - Example: `curl http://127.0.0.1:6384/api/v1/modules`
 - `GET /api/v1/module/*`
   - Get a single module by hash or path, the module hash will also be stored in
     the `Wasmstore-Hash` header in the response.
+  - Example: `curl http://127.0.0.1:6384/api/v1/module/mymodule.wasm`
 - `POST /api/v1/module/*`
   - Add a new module, the request body should contain the WASM module
+  - Example: `curl --data-binary @mymodule.wasm http://127.0.0.1:6384/api/v1/module/mymodule.wasm`
 - `DELETE /api/v1/module/*`
-  - Delete a module by path
+  - Delete a module by hash or path
 - `GET /api/v1/hash/*`
   - Get the hash of the module stored at a specific path
 - `PUT /api/v1/branch/:branch`
