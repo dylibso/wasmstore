@@ -55,6 +55,8 @@ branch.
 - `GET /api/v1/snapshot`
   - Returns the latest commit hash
 
+There are existing clients for [Rust](https://github.com/dylibso/wasmstore/tree/main/client/rust) and [Javascript](https://github.com/dylibso/wasmstore/tree/main/client/js)
+
 ### Authentication
 
 Using the `wasmstore server --auth` flag or the `WASMSTORE_AUTH` environment variable you can restrict certain authentication keys
