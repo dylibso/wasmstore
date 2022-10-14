@@ -1,26 +1,25 @@
-(lang dune 3.4)
+(lang dune 3.2)
+(cram enable)
 
 (name wasmstore)
 
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github dylibso/wasmstore))
 
-(authors "Author Name")
+(authors "Dylibso Inc.")
 
-(maintainers "Maintainer Name")
+(maintainers "Zach Shipko <zach@dylib.so>")
 
-(license LICENSE)
+(license BSD-3-clause)
 
-(documentation https://url/to/documentation)
+(documentation https://github.com/dylibso/wasmstore)
 
 (package
  (name wasmstore)
- (synopsis "A short synopsis")
- (description "A longer description")
- (depends ocaml dune irmin-git wasm cmdliner)
+ (synopsis "A WASM datastore")
+ (description "An OCaml library and command line program used to store WebAssembly modules")
+ (depends ocaml dune irmin irmin-fs lwt dream wasm cmdliner yojson)
  (tags
-  (topics "to describe" your project)))
-
-; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
+  (topics wasm irmin)))

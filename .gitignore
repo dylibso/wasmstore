@@ -1,2 +1,5 @@
 .wasmstore
 *.wasm
+Cargo.lock
+target
+node_modules

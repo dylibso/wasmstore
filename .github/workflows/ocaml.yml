@@ -1,0 +1,43 @@
+name: 'OCaml tests'
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+jobs:
+  run:
+    name: Build
+    runs-on: '${{ matrix.os }}'
+    steps:
+      - name: 'Install deps'
+        run: bash -c '''case "$(uname)" in
+          (*Linux*) sudo apt-get update && sudo apt-get install -y libev-dev libssl-dev pkg-config; ;;
+          (*Darwin*) brew install libev openssl pkg-config; ;;
+          esac'''
+      - name: 'Checkout code'
+        uses: actions/checkout@v3
+      - id: wasmstore-opam-cache
+        name: 'OCaml/Opam cache'
+        uses: actions/cache@v3
+        with:
+          key: 'wasmstore-opam-${{ matrix.ocaml-compiler }}-${{ matrix.os }}'
+          path: ~/.opam
+      - name: 'Use OCaml ${{ matrix.ocaml-compiler }}'
+        uses: avsm/setup-ocaml@v2
+        with:
+          ocaml-compiler: '${{ matrix.ocaml-compiler }}'
+      - run: 'opam install . --deps-only'
+      - name: 'Run OCaml tests'
+        run: 'opam exec -- dune runtest'
+    strategy:
+      fail-fast: true
+      matrix:
+        ocaml-compiler:
+          - 4.14.0
+          - 4.13.1
+        os:
+          - macos-latest
+          - ubuntu-latest

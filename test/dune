@@ -1,2 +1,2 @@
-(test
- (name wasmstore))
+(cram
+ (deps %{bin:wasmstore} a.wasm b.wasm))

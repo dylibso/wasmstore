@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  wasmstore:
+    build: .
+    ports:
+      - "6384:6384"
+    volumes:
+      - "db:/home/wasmstore/db"
+    environment:
+      - WASMSTORE_PORT=6384
+volumes:
+  db:

@@ -1,0 +1,17 @@
+<html>
+  <head>
+  </head>
+  <body>
+    <script src="/wasmstore.js"></script>
+    <script>
+      let client = new Client();
+      client.list().then(x => {
+        for (var k in x) {
+           var elem = document.createElement("div");
+           elem.innerHTML = k + "&nbsp;=>&nbsp;" + x[k] + "<br>";
+           document.body.append(elem);
+        } 
+      });
+    </script>
+  </body>
+</html>
