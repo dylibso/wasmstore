@@ -79,6 +79,10 @@ val with_branch : t -> string -> t Lwt.t
 (** [with_branch t branch] returns a copy of [t] with [branch] selected *)
 
 val watch : t -> (Yojson.Safe.t -> unit Lwt.t) -> Store.watch Lwt.t
+(** [watch t f] creates a new watch that calls [f] for each new commit *)
+
+val unwatch : Store.watch -> unit Lwt.t
+(** [unwatch w] unregisters and disables the watch [w] *)
 
 module Branch : sig
   val switch : t -> string -> unit Lwt.t
