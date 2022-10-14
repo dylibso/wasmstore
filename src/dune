@@ -1,3 +1,11 @@
 (library
  (name wasmstore)
- (libraries unix lwt.unix irmin.unix irmin-fs.unix wasm dream yojson))
+ (libraries
+  unix
+  lwt.unix
+  irmin.unix
+  irmin-fs.unix
+  irmin-watcher
+  wasm
+  dream
+  yojson))

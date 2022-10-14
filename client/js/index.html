@@ -5,12 +5,16 @@
     <script src="/wasmstore.js"></script>
     <script>
       let client = new Client();
-      client.list().then(x => {
-        for (var k in x) {
-           var elem = document.createElement("div");
-           elem.innerHTML = k + "&nbsp;=>&nbsp;" + x[k] + "<br>";
-           document.body.append(elem);
-        } 
+      client.watch(function(diff){
+        console.log(diff);
+      }).then(_ => {
+        client.list().then(x => {
+          for (var k in x) {
+             var elem = document.createElement("div");
+             elem.innerHTML = k + "&nbsp;=>&nbsp;" + x[k] + "<br>";
+             document.body.append(elem);
+          } 
+        });
       });
     </script>
   </body>

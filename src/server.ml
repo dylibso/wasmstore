@@ -1,6 +1,9 @@
 open Lwt.Syntax
 open Store
 open Gc
+open Diff
+
+let () = Irmin.Backend.Watch.set_listen_dir_hook Irmin_watcher.hook
 
 let with_branch t req =
   let branch = Dream.header req "Wasmstore-Branch" in
@@ -10,6 +13,10 @@ let path req =
   (Dream.path req [@alert "-deprecated"]) |> Dream.drop_trailing_slash
 
 let run ?tls ?(cors = false) ?auth ?(host = "localhost") ?(port = 6384) t =
+  let () =
+    Dream.log "Listening on %s:%d, tls=%b, cors=%b" host port
+      (Option.is_some tls) cors
+  in
   let headers = if cors then [ ("Access-Control-Allow-Origin", "*") ] else [] in
   let use_tls = Option.is_some tls in
   let key_file, certificate_file =
@@ -96,8 +103,20 @@ let run ?tls ?(cors = false) ?auth ?(host = "localhost") ?(port = 6384) t =
                  let path = path req in
                  let* t = with_branch t req in
                  let* data = Dream.body req in
-                 let* hash = add t path data in
-                 Dream.respond ~headers (Irmin.Type.to_string Store.Hash.t hash));
+                 Lwt.catch
+                   (fun () ->
+                     let* hash = add t path data in
+                     Dream.respond ~headers
+                       (Irmin.Type.to_string Store.Hash.t hash))
+                   (function
+                     | Wasm.Valid.Invalid (region, msg) ->
+                         let s =
+                           Printf.sprintf "%s: %s"
+                             (Wasm.Source.string_of_region region)
+                             msg
+                         in
+                         Dream.respond ~headers ~status:`Bad_Request s
+                     | exn -> raise exn));
              Dream.delete "/module/**" (fun req ->
                  let path = path req in
                  let* t = with_branch t req in
@@ -166,5 +185,24 @@ let run ?tls ?(cors = false) ?auth ?(host = "localhost") ?(port = 6384) t =
                  Dream.respond ~headers
                    (Irmin.Type.(to_json_string (list string)) branches));
              Dream.get "/branch" (fun _req -> Dream.respond ~headers t.branch);
+             Dream.get "/watch" (fun _req ->
+                 Dream.websocket ~headers ~close:false (fun ws ->
+                     let w = ref None in
+                     let* watch =
+                       watch t (fun diff ->
+                           Lwt.catch
+                             (fun () ->
+                               let d = Yojson.Safe.to_string diff in
+                               Dream.send ws d)
+                             (fun _ ->
+                               let* () =
+                                 match !w with
+                                 | Some w -> Store.unwatch w
+                                 | None -> Lwt.return_unit
+                               in
+                               Dream.close_websocket ws))
+                     in
+                     w := Some watch;
+                     Lwt.return_unit));
            ];
        ]

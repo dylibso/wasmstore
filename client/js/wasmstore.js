@@ -112,4 +112,14 @@ class Client {
     let res = await this.request("DELETE", "/branch/" + name);
     return res.ok;
   }
+
+  async watch(callback) {
+    let ws = new WebSocket(this.url.replace("http", "ws") + "/watch");
+
+    ws.onmessage = function(msg) {
+      callback(JSON.parse(msg.data))
+    };
+
+    return ws;
+  }
 }

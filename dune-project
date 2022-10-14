@@ -20,6 +20,6 @@
  (name wasmstore)
  (synopsis "A WASM datastore")
  (description "An OCaml library and command line program used to store WebAssembly modules")
- (depends ocaml dune irmin irmin-fs lwt dream wasm cmdliner yojson)
+ (depends ocaml dune irmin irmin-fs irmin-watcher lwt dream wasm cmdliner yojson)
  (tags
   (topics wasm irmin)))

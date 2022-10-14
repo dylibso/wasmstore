@@ -95,9 +95,19 @@ let add =
          if filename = "-" then Lwt_io.read Lwt_io.stdin
          else Lwt_io.chars_of_file filename |> Lwt_stream.to_string
        in
-       let+ hash = add t path data in
-       Format.printf "%a\n" (Irmin.Type.pp Store.hash_t) hash)
+       Lwt.catch
+         (fun () ->
+           let+ hash = add t path data in
+           Format.printf "%a\n" (Irmin.Type.pp Store.hash_t) hash)
+         (function
+           | Wasm.Valid.Invalid (region, msg) ->
+               Printf.fprintf stderr "%s: %s\n"
+                 (Wasm.Source.string_of_region region)
+                 msg;
+               Lwt.return_unit
+           | exn -> raise exn))
   in
+
   let doc = "Add a WASM module" in
   let info = Cmd.info "add" ~doc in
   let term = Term.(const cmd $ store $ file 0 $ path_opt 1) in
@@ -273,6 +283,24 @@ let branch =
   in
   Cmd.v info term
 
+let watch =
+  let cmd store command =
+    let proc = ref None in
+    Lwt_main.run
+      (let* t = store in
+       let* _w = watch t (fun diff -> Command.run_command diff command proc) in
+       let t, _ = Lwt.task () in
+       t)
+  in
+  let doc = "Print updates or run command when the store is updated" in
+  let info = Cmd.info "watch" ~doc in
+  let command =
+    let doc = Arg.info ~docv:"COMMAND" ~doc:"Command to execute" [] in
+    Arg.(value & pos_right 0 string [] & doc)
+  in
+  let term = Term.(const cmd $ store $ command) in
+  Cmd.v info term
+
 let commands =
   Cmd.group (Cmd.info "wasmstore")
     [
@@ -288,6 +316,7 @@ let commands =
       snapshot;
       restore;
       hash;
+      watch;
     ]
 
 let () = exit (Cmd.eval commands)

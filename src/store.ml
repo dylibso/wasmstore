@@ -12,6 +12,7 @@ end
 
 module Store = Irmin_fs_unix.Make (Schema)
 module Info = Irmin_unix.Info (Store.Info)
+module Hash = Store.Hash
 
 type t = { mutable db : Store.t; mutable branch : string }
 type hash = Store.Hash.t

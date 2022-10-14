@@ -1,5 +1,6 @@
 (** [Wasmstore] is a database used to securely store WebAssembly modules *)
 
+(** The underlying irmin store *)
 module Store :
   Irmin.S
     with type Schema.Contents.t = string
@@ -7,7 +8,6 @@ module Store :
      and type Schema.Branch.t = string
      and type hash = Irmin.Hash.SHA256.t
      and module Schema.Info = Irmin.Info.Default
-(** The underlying irmin store *)
 
 type t
 (** The main [Wasmstore] type *)
@@ -15,19 +15,22 @@ type t
 type hash = Irmin.Hash.SHA256.t
 (** Hash type, SHA256 *)
 
-val branch: t -> string
+module Hash : Irmin.Hash.S with type t = hash
+(** Re-export of [Store.Hash] *)
+
+val branch : t -> string
 (** [branch t] returns the current branch *)
 
-val store: t -> Store.t
+val store : t -> Store.t
 (** [store t] returns the underlying irmin store *)
 
-val repo: t -> Store.repo
+val repo : t -> Store.repo
 (** [repo t] returns the underlying irmin repo *)
 
 val v : ?branch:string -> string -> t Lwt.t
 (** [v ~branch root] opens a store open to [branch] on disk at [root] *)
 
-val snapshot: t -> Store.commit Lwt.t
+val snapshot : t -> Store.commit Lwt.t
 (** [snapshot t] gets the current head commit *)
 
 val restore : t -> Store.commit -> unit Lwt.t
@@ -56,7 +59,7 @@ val list : t -> string list -> (string list * hash) list Lwt.t
 val contains : t -> string list -> bool Lwt.t
 (** [contains t path] returns true if [path] exists *)
 
-val gc: t -> int Lwt.t
+val gc : t -> int Lwt.t
 (** [gc t] runs the GC and returns the number of objects deleted.
 
     When the gc is executed for a branch all prior commits are squashed into one
@@ -65,39 +68,42 @@ val gc: t -> int Lwt.t
     the garbage collector may purge prior commits, potentially causing `restore`
     to fail. *)
 
-val get_hash_and_filename: t -> string list -> (hash * string) option Lwt.t
+val get_hash_and_filename : t -> string list -> (hash * string) option Lwt.t
 (** [get_hash_and_filename t path] returns a tuple containing the hash and the filename
-    of the object disk relative to the root path *) 
+    of the object disk relative to the root path *)
 
-val merge: t -> string -> (unit, Irmin.Merge.conflict) result Lwt.t
+val merge : t -> string -> (unit, Irmin.Merge.conflict) result Lwt.t
 (** [merge t branch] merges [branch] into [t] *)
 
 val with_branch : t -> string -> t Lwt.t
 (** [with_branch t branch] returns a copy of [t] with [branch] selected *)
 
+val watch : t -> (Yojson.Safe.t -> unit Lwt.t) -> Store.watch Lwt.t
+
 module Branch : sig
-  val switch: t -> string -> unit Lwt.t
+  val switch : t -> string -> unit Lwt.t
   (** [switch t branch] sets [t]'s branch to [branch] *)
 
-  val create: t -> string -> (t, [`Msg of string]) result Lwt.t
+  val create : t -> string -> (t, [ `Msg of string ]) result Lwt.t
   (** [create t branch] creates a new branch, returning an error result if the
       branch already exists *)
 
-  val delete: t -> string -> unit Lwt.t
+  val delete : t -> string -> unit Lwt.t
   (** [delete t branch] destroys [branch] *)
 
-  val list: t -> string list Lwt.t
+  val list : t -> string list Lwt.t
   (** [list t] returns a list of all branches *)
 end
 
 module Server : sig
-  val run:
-    ?tls:[`Key_file of string] * [`Cert_file of string] ->
+  val run :
+    ?tls:[ `Key_file of string ] * [ `Cert_file of string ] ->
     ?cors:bool ->
     ?auth:(string * string) list ->
     ?host:string ->
     ?port:int ->
-    t -> unit Lwt.t
+    t ->
+    unit Lwt.t
   (** [run ~cors ~auth ~host ~port t] starts the server on [host:port]
       If [auth] is empty then no authentication is required, otherwise the client should
       provide a key using the [Wasmstore-Auth] header. [auth] is a mapping from
