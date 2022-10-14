@@ -57,6 +57,8 @@ branch.
   - Revert to the specified commit hash
 - `GET /api/v1/snapshot`
   - Returns the latest commit hash
+- `GET /api/v1/watch`
+  - A WebSocket endpoint that sends updates about changes to the store to the client
 
 There are existing clients for [Rust](https://github.com/dylibso/wasmstore/tree/main/client/rust) and [Javascript](https://github.com/dylibso/wasmstore/tree/main/client/js)
 
