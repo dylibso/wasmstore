@@ -109,7 +109,8 @@ let run ?tls ?(cors = false) ?auth ?(host = "localhost") ?(port = 6384) t =
                      Dream.respond ~headers
                        (Irmin.Type.to_string Store.Hash.t hash))
                    (function
-                     | Wasm.Valid.Invalid (region, msg) ->
+                     | Wasm.Valid.Invalid (region, msg)
+                     | Wasm.Decode.Code (region, msg) ->
                          let s =
                            Printf.sprintf "%s: %s"
                              (Wasm.Source.string_of_region region)

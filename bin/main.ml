@@ -100,8 +100,9 @@ let add =
            let+ hash = add t path data in
            Format.printf "%a\n" (Irmin.Type.pp Store.hash_t) hash)
          (function
-           | Wasm.Valid.Invalid (region, msg) ->
-               Printf.fprintf stderr "%s: %s\n"
+           | Wasm.Valid.Invalid (region, msg) | Wasm.Decode.Code (region, msg)
+             ->
+               Printf.fprintf stderr "ERROR in %s: %s\n"
                  (Wasm.Source.string_of_region region)
                  msg;
                Lwt.return_unit
