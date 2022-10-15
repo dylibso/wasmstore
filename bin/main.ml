@@ -284,12 +284,18 @@ let branch =
   in
   Cmd.v info term
 
+let run_command command diff =
+  match command with
+  | h :: t ->
+      let s = Yojson.Safe.to_string diff in
+      Lwt_process.pwrite (h, Array.of_list (h :: t)) s
+  | [] -> Lwt_io.printlf "%s" (Yojson.Safe.to_string diff)
+
 let watch =
   let cmd store command =
-    let proc = ref None in
     Lwt_main.run
       (let* t = store in
-       let* _w = watch t (fun diff -> Command.run_command diff command proc) in
+       let* _w = watch t (run_command command) in
        let t, _ = Lwt.task () in
        t)
   in
@@ -297,7 +303,7 @@ let watch =
   let info = Cmd.info "watch" ~doc in
   let command =
     let doc = Arg.info ~docv:"COMMAND" ~doc:"Command to execute" [] in
-    Arg.(value & pos_right 0 string [] & doc)
+    Arg.(value & pos_all string [] & doc)
   in
   let term = Term.(const cmd $ store $ command) in
   Cmd.v info term
