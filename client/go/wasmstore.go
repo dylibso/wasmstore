@@ -20,8 +20,15 @@ type Config struct {
 	Version string
 }
 
-func makePath(path []string) string {
+func JoinPath(path []string) string {
 	return strings.Join(path[:], "/")
+}
+
+func SplitPath(path string) []string {
+	if path == "/" || path == "" {
+		return []string{}
+	}
+	return strings.Split(path, "/")
 }
 
 func NewClient(u string, config *Config) (Client, error) {
@@ -72,7 +79,7 @@ func (c *Client) Request(method string, route string, body io.Reader) ([]byte, i
 }
 
 func (c *Client) Find(path ...string) ([]byte, bool, error) {
-	res, code, err := c.Request("GET", "/module/"+makePath(path), nil)
+	res, code, err := c.Request("GET", "/module/"+JoinPath(path), nil)
 	if err != nil {
 		return nil, false, err
 	}
@@ -81,7 +88,16 @@ func (c *Client) Find(path ...string) ([]byte, bool, error) {
 }
 
 func (c *Client) Add(wasm io.Reader, path ...string) (string, error) {
-	res, _, err := c.Request("POST", "/module/"+makePath(path), wasm)
+	res, _, err := c.Request("POST", "/module/"+JoinPath(path), wasm)
+	if err != nil {
+		return "", err
+	}
+
+	return string(res), nil
+}
+
+func (c *Client) Hash(path ...string) (string, error) {
+	res, _, err := c.Request("GET", "/hash/"+JoinPath(path), nil)
 	if err != nil {
 		return "", err
 	}
@@ -90,7 +106,7 @@ func (c *Client) Add(wasm io.Reader, path ...string) (string, error) {
 }
 
 func (c *Client) Remove(path ...string) (bool, error) {
-	_, code, err := c.Request("DELETE", "/module/"+makePath(path), nil)
+	_, code, err := c.Request("DELETE", "/module/"+JoinPath(path), nil)
 	if err != nil {
 		return false, nil
 	}
@@ -167,13 +183,13 @@ func (c *Client) Branches() ([]string, error) {
 	return s, nil
 }
 
-func (c *Client) List(path ...string) ([]string, error) {
-	res, _, err := c.Request("GET", "/modules/"+makePath(path), nil)
+func (c *Client) List(path ...string) (map[string]string, error) {
+	res, _, err := c.Request("GET", "/modules/"+JoinPath(path), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var s []string
+	var s map[string]string
 	err = json.Unmarshal(res, &s)
 	if err != nil {
 		return nil, err
