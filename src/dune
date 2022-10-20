@@ -7,5 +7,9 @@
   irmin-fs.unix
   irmin-watcher
   wasm
-  dream
+  fmt.tty
+  fmt.cli
+  logs.cli
+  cohttp-lwt-unix
+  websocket
   yojson))

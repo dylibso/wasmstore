@@ -240,8 +240,10 @@ mod tests {
         let client = Client::new("http://127.0.0.1:6384", Version::V1).unwrap();
 
         let data = std::fs::read("../../test/a.wasm").unwrap();
-        let hash = client.add("test.wasm", data).await.unwrap();
-        let data = client.find(hash).await.unwrap();
+        let hash = client.add("test.wasm", data).await;
+        println!("HASH: {hash:?}");
+
+        let data = client.find(hash.unwrap()).await.unwrap();
         let data1 = client.find("test.wasm").await.unwrap();
 
         assert!(data.is_some());

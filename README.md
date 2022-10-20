@@ -3,7 +3,7 @@
 A content-addressable store for WASM modules
 
 - Built-in WASM validation
-- Branches with merging
+- History and branching/merging
 - CLI and HTTP interfaces
 
 ## HTTP Interface

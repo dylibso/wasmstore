@@ -2,6 +2,32 @@ open Lwt.Syntax
 open Wasmstore
 open Cmdliner
 
+let reporter ppf =
+  let report src level ~over k msgf =
+    let k _ =
+      over ();
+      k ()
+    in
+    let with_metadata header _tags k ppf fmt =
+      Format.kfprintf k ppf
+        ("%a[%a]: " ^^ fmt ^^ "\n%!")
+        Logs_fmt.pp_header (level, header)
+        Fmt.(styled `Magenta string)
+        (Logs.Src.name src)
+    in
+    msgf @@ fun ?header ?tags fmt -> with_metadata header tags k ppf fmt
+  in
+  { Logs.report }
+
+let setup_log style_renderer level =
+  Fmt_tty.setup_std_outputs ?style_renderer ();
+  Logs.set_level ~all:true level;
+  Logs.set_reporter (reporter Fmt.stderr);
+  ()
+
+let setup_log =
+  Term.(const setup_log $ Fmt_cli.style_renderer () $ Logs_cli.level ())
+
 let default_root = Filename.concat (Sys.getenv "HOME") ".wasmstore"
 
 let root =
@@ -81,8 +107,8 @@ let cors =
   Arg.(value & flag & info [ "cors" ] ~doc)
 
 let store =
-  let aux root branch = v ~branch root in
-  Term.(const aux $ root $ branch)
+  let aux () root branch = v ~branch root in
+  Term.(const aux $ setup_log $ root $ branch)
 
 let add =
   let cmd store filename path =
@@ -248,15 +274,18 @@ let hash =
   Cmd.v info term
 
 let server =
-  let cmd store host port auth cors tls =
-    let tls =
+  let rec cmd store host port auth cors tls =
+    let tls' =
       match tls with
       | Some (k, c) -> Some (`Key_file k, `Cert_file c)
       | None -> None
     in
-    Lwt_main.run
-      (let* t = store in
-       Server.run ~cors ?tls ?host ?port ?auth t)
+    let* t = store in
+    try Server.run ~cors ?tls:tls' ?host ?port ?auth t
+    with _ -> cmd store host port auth cors tls
+  in
+  let cmd store host port auth cors tls =
+    Lwt_main.run (cmd store host port auth cors tls)
   in
   let doc = "Run server" in
   let info = Cmd.info "server" ~doc in
@@ -264,7 +293,7 @@ let server =
   Cmd.v info term
 
 let branch =
-  let cmd root branch_name delete list =
+  let cmd () root branch_name delete list =
     Lwt_main.run
       (let* t = v root in
        if list then
@@ -280,7 +309,8 @@ let branch =
   let doc = "Modify a branch" in
   let info = Cmd.info "branch" ~doc in
   let term =
-    Term.(const cmd $ root $ branch_name 0 $ delete_flag $ list_flag)
+    Term.(
+      const cmd $ setup_log $ root $ branch_name 0 $ delete_flag $ list_flag)
   in
   Cmd.v info term
 
