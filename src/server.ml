@@ -65,6 +65,11 @@ let require_auth ~auth ~headers req f =
     |> List.filter_map (function "" -> None | x -> Some x)
   in
   let path' = v1 path' in
+  Logs.info (fun l ->
+      l "%s %s\n%s"
+        (Code.string_of_method meth)
+        path
+        (Request.headers req |> Header.to_string |> String.trim));
   if Hashtbl.length auth = 0 then f (meth, path')
   else
     let h = Request.headers req in
