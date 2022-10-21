@@ -98,13 +98,11 @@ let find_module t ~headers req path =
   let* filename = get_hash_and_filename t path in
   match filename with
   | Some (hash, filename) ->
-      let ic = Lwt_io.lines_of_file (root t // filename) in
-      let body = Body.of_stream ic in
       let headers =
         Header.add headers "Wasmstore-Hash"
           (Irmin.Type.to_string Store.Hash.t hash)
       in
-      response @@ Server.respond ~status:`OK ~headers ~body ()
+      response @@ Server.respond_file ~headers ~fname:(root t // filename) ()
   | _ ->
       response @@ Server.respond_string ~headers ~status:`Not_found ~body:"" ()
 
