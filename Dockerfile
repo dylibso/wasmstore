@@ -1,6 +1,6 @@
 FROM ocaml/opam:latest as build
 COPY . .
-RUN sudo apt-get install -y libev-dev libgmp-dev pkg-config libssl-dev
+RUN sudo apt-get install -y libev-dev libgmp-dev pkg-config libssl-dev libffi-dev
 RUN opam install --deps-only .
 RUN opam exec -- dune build
 RUN sudo cp _build/install/default/bin/wasmstore /usr/bin/wasmstore
