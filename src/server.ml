@@ -54,9 +54,10 @@ let add_module t ~headers req body path =
           @@ Server.respond_string ~headers ~status:`Bad_request ~body:s ()
       | exn -> raise exn)
 
-let v1 path = match path with "api" :: "v1" :: tl -> Some tl | _ -> None
+let remove_prefix path =
+  match path with "api" :: "v1" :: tl -> Some (`V1 tl) | _ -> None
 
-let require_auth ~auth ~headers req f =
+let require_auth ~body ~auth ~headers req ~v1 =
   let uri = Request.uri req in
   let meth = Request.meth req in
   let path = Uri.path uri in
@@ -64,13 +65,21 @@ let require_auth ~auth ~headers req f =
     String.split_on_char '/' path
     |> List.filter_map (function "" -> None | x -> Some x)
   in
-  let path' = v1 path' in
+  let path' = remove_prefix path' in
   Logs.info (fun l ->
       l "%s %s\n%s"
         (Code.string_of_method meth)
         path
         (Request.headers req |> Header.to_string |> String.trim));
-  if Hashtbl.length auth = 0 then f (meth, path')
+  let f () =
+    match path' with
+    | Some p -> v1 (meth, p)
+    | None ->
+        let* () = Body.drain_body body in
+        response
+        @@ Server.respond_string ~headers ~status:`Not_found ~body:"" ()
+  in
+  if Hashtbl.length auth = 0 then f ()
   else
     let h = Request.headers req in
     let key = Header.get h "Wasmstore-Auth" |> Option.value ~default:"" in
@@ -78,14 +87,14 @@ let require_auth ~auth ~headers req f =
       Hashtbl.find_opt auth key |> Option.map (String.split_on_char ',')
     in
     match perms with
-    | Some [ "*" ] -> f (meth, path')
+    | Some [ "*" ] -> f ()
     | Some x ->
         let exists =
           List.exists
             (fun m -> String.equal (Cohttp.Code.string_of_method meth) m)
             x
         in
-        if exists then f (meth, path')
+        if exists then f ()
         else
           response
           @@ Server.respond_string ~headers ~status:`Unauthorized ~body:"" ()
@@ -122,26 +131,26 @@ let find_hash t ~headers req path =
       response @@ Server.respond_string ~headers ~status:`Not_found ~body:"" ()
 
 let callback t ~headers ~auth _conn req body =
-  require_auth ~auth ~headers req (function
-    | `GET, Some ("modules" :: path) ->
+  require_auth ~auth ~headers ~body req ~v1:(function
+    | `GET, `V1 ("modules" :: path) ->
         let* () = Body.drain_body body in
         list_modules t ~headers req path
-    | `GET, Some ("module" :: path) ->
+    | `GET, `V1 ("module" :: path) ->
         let* () = Body.drain_body body in
         find_module t ~headers req path
-    | `GET, Some ("hash" :: path) ->
+    | `GET, `V1 ("hash" :: path) ->
         let* () = Body.drain_body body in
         find_hash t ~headers req path
-    | `POST, Some ("module" :: path) -> add_module t ~headers req body path
-    | `DELETE, Some ("module" :: path) ->
+    | `POST, `V1 ("module" :: path) -> add_module t ~headers req body path
+    | `DELETE, `V1 ("module" :: path) ->
         let* () = Body.drain_body body in
         delete_module t ~headers req path
-    | `POST, Some [ "gc" ] ->
+    | `POST, `V1 [ "gc" ] ->
         let* () = Body.drain_body body in
         let* t = with_branch' t req in
         let* _ = gc t in
         response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
-    | `POST, Some [ "merge"; from_branch ] -> (
+    | `POST, `V1 [ "merge"; from_branch ] -> (
         let* t = with_branch' t req in
         let* res = merge t from_branch in
         match res with
@@ -152,7 +161,7 @@ let callback t ~headers ~auth _conn req body =
             @@ Server.respond_string ~headers ~status:`Bad_request
                  ~body:(Irmin.Type.to_string Irmin.Merge.conflict_t r)
                  ())
-    | `POST, Some [ "restore"; hash ] -> (
+    | `POST, `V1 [ "restore"; hash ] -> (
         let* t = with_branch' t req in
         let hash = Irmin.Type.of_string Store.Hash.t hash in
         match hash with
@@ -171,7 +180,7 @@ let callback t ~headers ~auth _conn req body =
                 let* () = restore t commit in
                 response
                 @@ Server.respond_string ~headers ~status:`OK ~body:"" ()))
-    | `GET, Some [ "snapshot" ] ->
+    | `GET, `V1 [ "snapshot" ] ->
         let* t = with_branch' t req in
         let* commit = snapshot t in
         response
@@ -179,13 +188,13 @@ let callback t ~headers ~auth _conn req body =
              ~body:
                (Irmin.Type.to_string Store.Hash.t (Store.Commit.hash commit))
              ()
-    | `GET, Some [ "branches" ] ->
+    | `GET, `V1 [ "branches" ] ->
         let* () = Body.drain_body body in
         list_branches t ~headers
-    | `PUT, Some [ "branch"; branch ] ->
+    | `PUT, `V1 [ "branch"; branch ] ->
         let* () = Branch.switch t branch in
         response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
-    | `POST, Some [ "branch"; branch ] -> (
+    | `POST, `V1 [ "branch"; branch ] -> (
         let* res = Branch.create t branch in
         match res with
         | Ok _ ->
@@ -193,12 +202,12 @@ let callback t ~headers ~auth _conn req body =
         | Error (`Msg s) ->
             response
             @@ Server.respond_string ~headers ~status:`Conflict ~body:s ())
-    | `DELETE, Some [ "branch"; branch ] ->
+    | `DELETE, `V1 [ "branch"; branch ] ->
         let* () = Branch.delete t branch in
         response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
-    | `GET, Some [ "branch" ] ->
+    | `GET, `V1 [ "branch" ] ->
         response @@ Server.respond_string ~headers ~status:`OK ~body:t.branch ()
-    | `GET, Some [ "watch" ] ->
+    | `GET, `V1 [ "watch" ] ->
         let w = ref None in
         let* a, send =
           Server_websocket.upgrade_connection req (fun msg ->
