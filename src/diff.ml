@@ -14,14 +14,14 @@ let make_diff list =
   `Assoc
     (List.map
        (function
-         | path, `Updated ((v, ()), (v', ())) ->
+         | path, `Updated ((v, _), (v', _)) ->
              let path = Irmin.Type.to_string Store.path_t path in
              ( path,
                `Assoc
                  [
                    ("action", `String "updated"); ("hash", update_old_new v v');
                  ] )
-         | path, `Removed (v, ()) ->
+         | path, `Removed (v, _) ->
              let path = Irmin.Type.to_string Store.path_t path in
              ( path,
                `Assoc
@@ -32,7 +32,7 @@ let make_diff list =
                        (Irmin.Type.to_string Store.Hash.t
                           (Store.Contents.hash v)) );
                  ] )
-         | path, `Added (v, ()) ->
+         | path, `Added (v, _) ->
              let path = Irmin.Type.to_string Store.path_t path in
              ( path,
                `Assoc
