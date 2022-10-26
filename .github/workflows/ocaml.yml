@@ -29,7 +29,7 @@ jobs:
         name: 'OCaml/Dune cache'
         uses: actions/cache@v3
         with:
-          key: wasmstore-dune-${{ matrix.ocaml-compiler }}-${{ matrix.os }}-${{ hashFiles('lib/**') }}
+          key: wasmstore-dune-${{ matrix.ocaml-compiler }}-${{ matrix.os }}-${{ hashFiles('src/**') }}
           path: _build
       - name: 'Use OCaml ${{ matrix.ocaml-compiler }}'
         uses: avsm/setup-ocaml@v2
@@ -44,5 +44,5 @@ jobs:
         ocaml-compiler:
           - 4.14.0
         os:
-          - macos-latest
+          #- macos-latest
           - ubuntu-latest
