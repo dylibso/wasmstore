@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: 'Install deps'
         run: bash -c '''case "$(uname)" in
-          (*Linux*) sudo apt-get update && sudo apt-get install -y libev-dev libssl-dev pkg-config; ;;
+          (*Linux*) sudo apt-get install -y libev-dev libssl-dev pkg-config; ;;
           (*Darwin*) brew install libev openssl pkg-config; ;;
           esac'''
       - name: 'Checkout code'
@@ -25,19 +25,24 @@ jobs:
         with:
           key: 'wasmstore-opam-${{ matrix.ocaml-compiler }}-${{ matrix.os }}'
           path: ~/.opam
+      - id: wasmstore-dune-cache
+        name: 'OCaml/Dune cache'
+        uses: actions/cache@v3
+        with:
+          key: wasmstore-dune-${{ matrix.ocaml-compiler }}-${{ matrix.os }}-${{ hashFiles('lib/**') }}
+          path: _build
       - name: 'Use OCaml ${{ matrix.ocaml-compiler }}'
         uses: avsm/setup-ocaml@v2
         with:
           ocaml-compiler: '${{ matrix.ocaml-compiler }}'
-      - run: 'opam install . --deps-only'
+      - run: opam install . --deps-only -y
       - name: 'Run OCaml tests'
-        run: 'opam exec -- dune runtest'
+        run: opam exec -- dune runtest
     strategy:
       fail-fast: true
       matrix:
         ocaml-compiler:
           - 4.14.0
-          - 4.13.1
         os:
           - macos-latest
           - ubuntu-latest
