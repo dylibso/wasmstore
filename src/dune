@@ -7,10 +7,11 @@
   irmin-fs.unix
   irmin-watcher
   wasm
+  logs.fmt
   fmt.tty
   fmt.cli
   logs.cli
   cohttp-lwt-unix
   websocket
   yojson)
- (preprocess (pps ppx_irmin)))
+ (preprocess (pps ppx_irmin.internal)))

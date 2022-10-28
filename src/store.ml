@@ -2,26 +2,6 @@ open Lwt.Syntax
 
 let ( // ) = Filename.concat
 
-module Schema = struct
-  include Irmin.Schema.KV (Irmin.Contents.String)
-  module Hash = Irmin.Hash.SHA256
-  module Key = Irmin.Key.Of_hash (Hash)
-
-  module Metadata = struct
-    include Irmin.Contents.Json
-
-    let default = []
-
-    let merge =
-      Irmin.Merge.(
-        alist Irmin.Type.string Irmin.Contents.Json_value.t (fun _ ->
-            Irmin.Contents.Json_value.merge))
-  end
-
-  module Node = Irmin.Node.Generic_key.Make (Hash) (Path) (Metadata)
-  module Commit = Irmin.Commit.Generic_key.Make (Hash)
-end
-
 module Store = Irmin_fs_unix.Make (Schema)
 module Info = Irmin_unix.Info (Store.Info)
 module Hash = Store.Hash
