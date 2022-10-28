@@ -4,3 +4,8 @@ Cargo.lock
 target
 node_modules
 __pycache__
+
+# Added by cargo
+
+/target
+/Cargo.lock

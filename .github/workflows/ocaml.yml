@@ -19,6 +19,13 @@ jobs:
           esac'''
       - name: 'Checkout code'
         uses: actions/checkout@v3
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Cache Rust environment
+        uses: Swatinem/rust-cache@v1
       - id: wasmstore-opam-cache
         name: 'OCaml/Opam cache'
         uses: actions/cache@v3

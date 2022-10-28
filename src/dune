@@ -6,7 +6,6 @@
   irmin.unix
   irmin-fs.unix
   irmin-watcher
-  wasm
   logs.fmt
   fmt.tty
   fmt.cli
@@ -14,4 +13,16 @@
   cohttp-lwt-unix
   websocket
   yojson)
- (preprocess (pps ppx_irmin.internal)))
+ (preprocess (pps ppx_irmin.internal))
+ (foreign_archives wasm)
+ (c_library_flags
+  (-lpthread -lc -lm)))
+
+(rule
+ (targets libwasm.a)
+ (deps (glob_files *.rs))
+ (action
+  (progn
+   (run cargo build --target-dir %{project_root}/../../target --release)
+   (run mv %{project_root}/../../target/release/libwasm.a libwasm.a))))
+

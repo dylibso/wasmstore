@@ -46,12 +46,9 @@ let add_module t ~headers req body path =
       let body = Irmin.Type.to_string Store.Hash.t hash in
       response @@ Server.respond_string ~headers ~status:`OK ~body ())
     (function
-      | Wasm.Valid.Invalid (region, msg) | Wasm.Decode.Code (region, msg) ->
-          let s =
-            Printf.sprintf "%s: %s" (Wasm.Source.string_of_region region) msg
-          in
+      | Validation_error msg ->
           response
-          @@ Server.respond_string ~headers ~status:`Bad_request ~body:s ()
+          @@ Server.respond_string ~headers ~status:`Bad_request ~body:msg ()
       | exn -> raise exn)
 
 let remove_prefix path =

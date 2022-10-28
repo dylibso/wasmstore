@@ -8,6 +8,8 @@ module Store :
      and type Schema.Branch.t = string
      and type hash = Irmin.Hash.SHA256.t
      and module Schema.Info = Irmin.Info.Default
+        
+exception Validation_error of string
 
 type t
 (** The main [Wasmstore] type *)

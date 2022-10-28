@@ -110,6 +110,30 @@ let store =
   let aux () root branch = v ~branch root in
   Term.(const aux $ setup_log $ root $ branch)
 
+let buf_size = 4096
+
+let rec read_file buf ic f =
+  let* n = Lwt_io.read_into ic buf 0 buf_size in
+  f (Some (Bytes.sub_string buf 0 n));
+  if n < buf_size then
+    let () = f None in
+    Lwt.return_unit
+  else read_file buf ic f
+
+let file_stream filename =
+  let buf = Bytes.create buf_size in
+  let s, push = Lwt_stream.create () in
+  let* () =
+    Lwt_io.with_file ~mode:Input filename (fun ic -> read_file buf ic push)
+  in
+  Lwt.return s
+
+let stdin_stream () =
+  let buf = Bytes.create buf_size in
+  let s, push = Lwt_stream.create () in
+  let* () = read_file buf Lwt_io.stdin push in
+  Lwt.return s
+
 let add =
   let cmd store filename path =
     let path =
@@ -118,20 +142,15 @@ let add =
     Lwt_main.run
       (let* t = store in
        let* data =
-         if filename = "-" then Lwt_io.read Lwt_io.stdin
-         else Lwt_io.chars_of_file filename |> Lwt_stream.to_string
+         if filename = "-" then stdin_stream () else file_stream filename
        in
        Lwt.catch
          (fun () ->
-           let+ hash = add t path data in
+           let+ hash = import t path data in
            Format.printf "%a\n" (Irmin.Type.pp Store.hash_t) hash)
          (function
-           | Wasm.Valid.Invalid (region, msg) | Wasm.Decode.Code (region, msg)
-             ->
-               Printf.fprintf stderr "ERROR in %s: %s\n"
-                 (Wasm.Source.string_of_region region)
-                 msg;
-               Lwt.return_unit
+           | Validation_error msg ->
+               Lwt_io.fprintlf Lwt_io.stderr "ERROR invalid module: %s" msg
            | exn -> raise exn))
   in
 

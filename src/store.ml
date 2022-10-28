@@ -13,6 +13,8 @@ let store { db; _ } = db
 let branch { branch; _ } = branch
 let repo { db; _ } = Store.repo db
 
+exception Validation_error of string
+
 let hash_or_path ~hash ~path = function
   | [ hash_or_path ] -> (
       match Irmin.Type.of_string Store.Hash.t hash_or_path with
@@ -40,9 +42,15 @@ let v ?(branch = Store.Branch.main) root =
   in
   Lwt.return { db; branch }
 
-let verify wasm =
-  let m = Wasm.Decode.decode "wasm" wasm in
-  Wasm.Valid.check_module m
+let verify_string wasm =
+  match Rust.wasm_verify_string wasm with
+  | Ok () -> ()
+  | Error e -> raise (Validation_error e)
+
+let verify_file filename =
+  match Rust.wasm_verify_file ~filename with
+  | Ok () -> ()
+  | Error e -> raise (Validation_error e)
 
 let snapshot { db; _ } = Store.Head.get db
 let restore { db; _ } commit = Store.Head.set db commit
@@ -89,17 +97,28 @@ let import t path stream =
   let a = String.sub hash 0 2 in
   let b = String.sub hash 2 (String.length hash - 2) in
   let dest = root t // "objects" // a // b in
+  let* exists = Lwt_unix.file_exists dest in
   let* () =
-    Lwt.catch
-      (fun () -> Lwt_unix.mkdir (Filename.dirname dest) 0o755)
-      (fun _ -> Lwt.return_unit)
+    if not exists then
+      let () =
+        try verify_file tmp
+        with e ->
+          Unix.unlink tmp;
+          raise e
+      in
+      let* () =
+        Lwt.catch
+          (fun () -> Lwt_unix.mkdir (Filename.dirname dest) 0o755)
+          (fun _ -> Lwt.return_unit)
+      in
+      Lwt_unix.rename tmp dest
+    else Lwt.return_unit
   in
-  let* () = Lwt_unix.rename tmp dest in
   let* () = set_path t path hash' in
   Lwt.return hash'
 
 let add { db; _ } path wasm =
-  let () = verify wasm in
+  let () = verify_string wasm in
   let info = Info.v "Add %a" (Irmin.Type.pp Store.Path.t) path in
   let f hash =
     Store.set_exn db [ Irmin.Type.to_string Store.Hash.t hash ] wasm ~info
