@@ -3,7 +3,7 @@ use std::io::Read;
 const BUF_SIZE: usize = 4096;
 
 #[ocaml::func]
-#[ocaml::sig("filename:string -> (unit, string) result")]
+#[ocaml::sig("string -> (unit, string) result")]
 pub unsafe fn wasm_verify_file(filename: &str) -> Result<(), String> {
     let mut f = match std::fs::File::open(filename) {
         Ok(f) => f,
@@ -26,11 +26,19 @@ pub unsafe fn wasm_verify_file(filename: &str) -> Result<(), String> {
                 .parse(&buf[index..n], false)
                 .map_err(|e| e.to_string())?;
             match res {
-                wasmparser::Chunk::NeedMoreData(_) => continue,
+                wasmparser::Chunk::NeedMoreData(_) => {
+                    if n < BUF_SIZE {
+                        break;
+                    } else {
+                        continue;
+                    }
+                }
                 wasmparser::Chunk::Parsed { payload, consumed } => {
                     index += consumed;
                     match validator.payload(&payload).map_err(|e| e.to_string())? {
-                        wasmparser::ValidPayload::Ok => return Ok(()),
+                        wasmparser::ValidPayload::End(_) => {
+                            return Ok(());
+                        }
                         wasmparser::ValidPayload::Parser(p) => {
                             parser = p;
                         }
@@ -39,17 +47,6 @@ pub unsafe fn wasm_verify_file(filename: &str) -> Result<(), String> {
                 }
             }
         }
-    }
-
-    let res = parser.parse(&[], true).map_err(|e| e.to_string())?;
-    match res {
-        wasmparser::Chunk::Parsed { payload, .. } => {
-            match validator.payload(&payload).map_err(|e| e.to_string())? {
-                wasmparser::ValidPayload::Ok | wasmparser::ValidPayload::End(_) => return Ok(()),
-                _ => (),
-            }
-        }
-        _ => (),
     }
 
     return Err("unable to detect end of module".to_string());
@@ -64,7 +61,7 @@ pub unsafe fn wasm_verify_string(data: &[u8]) -> Result<(), String> {
     for payload in parser.parse_all(data) {
         let payload = payload.map_err(|x| x.to_string())?;
         match validator.payload(&payload).map_err(|e| e.to_string())? {
-            wasmparser::ValidPayload::Ok => return Ok(()),
+            wasmparser::ValidPayload::Ok | wasmparser::ValidPayload::End(_) => return Ok(()),
             _ => (),
         }
     }

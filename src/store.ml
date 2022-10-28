@@ -48,7 +48,7 @@ let verify_string wasm =
   | Error e -> raise (Validation_error e)
 
 let verify_file filename =
-  match Rust.wasm_verify_file ~filename with
+  match Rust.wasm_verify_file filename with
   | Ok () -> ()
   | Error e -> raise (Validation_error e)
 
