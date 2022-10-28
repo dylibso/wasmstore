@@ -4,6 +4,7 @@ RUN sudo apt-get install -y libev-dev libgmp-dev pkg-config libssl-dev libffi-de
 RUN curl https://sh.rustup.rs -sSf | sh -s -- --profile minimal -y
 RUN opam install --deps-only .
 RUN sudo ln -sf ~/.cargo/bin/cargo /usr/bin/cargo
+RUN cargo vendor
 RUN opam exec -- dune build
 RUN sudo cp _build/install/default/bin/wasmstore /usr/bin/wasmstore
 
