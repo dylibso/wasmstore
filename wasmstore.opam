@@ -21,7 +21,6 @@ depends: [
   "fmt"
   "logs"
   "websocket"
-  "wasm"
   "cmdliner"
   "yojson"
   "odoc" {with-doc}

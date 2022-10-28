@@ -1,7 +1,9 @@
 FROM ocaml/opam:latest as build
 COPY . .
-RUN sudo apt-get install -y libev-dev libgmp-dev pkg-config libssl-dev libffi-dev
+RUN sudo apt-get install -y libev-dev libgmp-dev pkg-config libssl-dev libffi-dev curl
+RUN curl https://sh.rustup.rs -sSf | sh -s -- --profile minimal -y
 RUN opam install --deps-only .
+RUN sudo ln -sf ~/.cargo/bin/cargo /usr/bin/cargo
 RUN opam exec -- dune build
 RUN sudo cp _build/install/default/bin/wasmstore /usr/bin/wasmstore
 
