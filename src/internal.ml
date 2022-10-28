@@ -46,7 +46,7 @@ module Read_only_ext (S : Config) (K : Irmin.Type.S) (V : Irmin.Type.S) = struct
   type value = V.t
   type 'a t = { path : string }
 
-  let get_path config = Option.value Conf.(find_root config) ~default:"."
+  let get_path config = Conf.(get config Key.root)
 
   let v config =
     let path = get_path config in

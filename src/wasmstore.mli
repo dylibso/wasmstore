@@ -44,6 +44,8 @@ val find : t -> string list -> string option Lwt.t
 val add : t -> string list -> string -> hash Lwt.t
 (** [add t path wasm_module] sets [path] to [wasm_module] after verifying the module. If [path] is a hash
     then it will be converted to "[$HASH].wasm". *)
+        
+val import : t -> string list -> string Lwt_stream.t -> hash Lwt.t
 
 val hash : t -> string list -> hash option Lwt.t
 (** [hash t path] returns the hash associated the the value stored at [path],

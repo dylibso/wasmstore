@@ -27,8 +27,18 @@ let root t =
 let v ?(branch = Store.Branch.main) root =
   let config = Irmin_fs.config root in
   let* repo = Store.Repo.v config in
-  let+ db = Store.of_branch repo branch in
-  { db; branch }
+  let* db = Store.of_branch repo branch in
+  let* () =
+    Lwt.catch
+      (fun () -> Lwt_unix.mkdir (root // "tmp") 0o755)
+      (fun _ -> Lwt.return_unit)
+  in
+  let* () =
+    Lwt.catch
+      (fun () -> Lwt_unix.mkdir (root // "objects") 0o755)
+      (fun _ -> Lwt.return_unit)
+  in
+  Lwt.return { db; branch }
 
 let verify wasm =
   let m = Wasm.Decode.decode "wasm" wasm in
@@ -46,6 +56,47 @@ let get_hash_and_filename t path =
       let a = String.sub hash' 0 2 in
       let b = String.sub hash' 2 (String.length hash' - 2) in
       Lwt.return_some (hash, "objects" // a // b)
+
+let set_path t path hash =
+  let* tree = Store.Tree.of_hash (repo t) (`Contents (hash, ())) in
+  match tree with
+  | None -> failwith "hash mismatch"
+  | Some tree ->
+      let info = Info.v "Import %a" (Irmin.Type.pp Store.Path.t) path in
+      Store.set_tree_exn t.db path tree ~info
+
+let import t path stream =
+  let hash = ref (Digestif.SHA256.init ()) in
+  let tmp =
+    Filename.temp_file ~temp_dir:(root t // "tmp") "wasmstore" "import"
+  in
+  let* () =
+    Lwt_io.with_file
+      ~flags:Unix.[ O_CREAT; O_WRONLY ]
+      ~mode:Output tmp
+      (fun oc ->
+        Lwt_stream.iter_s
+          (fun s ->
+            hash := Digestif.SHA256.feed_string !hash s;
+            Lwt_io.write oc s)
+          stream)
+  in
+  let hash = Digestif.SHA256.get !hash in
+  let hash' =
+    Irmin.Hash.SHA256.unsafe_of_raw_string (Digestif.SHA256.to_raw_string hash)
+  in
+  let hash = Digestif.SHA256.to_hex hash in
+  let a = String.sub hash 0 2 in
+  let b = String.sub hash 2 (String.length hash - 2) in
+  let dest = root t // "objects" // a // b in
+  let* () =
+    Lwt.catch
+      (fun () -> Lwt_unix.mkdir (Filename.dirname dest) 0o755)
+      (fun _ -> Lwt.return_unit)
+  in
+  let* () = Lwt_unix.rename tmp dest in
+  let* () = set_path t path hash' in
+  Lwt.return hash'
 
 let add { db; _ } path wasm =
   let () = verify wasm in

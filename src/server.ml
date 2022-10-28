@@ -39,10 +39,10 @@ let list_branches t ~headers =
 
 let add_module t ~headers req body path =
   let* t = with_branch' t req in
-  let* data = Body.to_string body in
+  let data = Body.to_stream body in
   Lwt.catch
     (fun () ->
-      let* hash = add t path data in
+      let* hash = import t path data in
       let body = Irmin.Type.to_string Store.Hash.t hash in
       response @@ Server.respond_string ~headers ~status:`OK ~body ())
     (function
