@@ -22,7 +22,7 @@ pub unsafe fn wasm_verify_file(filename: &str) -> Result<(), String> {
         let mut index = 0;
         while index < n {
             let res = parser
-                .parse(&buf[index..n], n == 0)
+                .parse(&buf[index..n], n < BUF_SIZE)
                 .map_err(|e| e.to_string())?;
             match res {
                 wasmparser::Chunk::NeedMoreData(_) => {
