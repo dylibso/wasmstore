@@ -19,11 +19,10 @@ pub unsafe fn wasm_verify_file(filename: &str) -> Result<(), String> {
         if n == 0 {
             break;
         }
-
         let mut index = 0;
         while index < n {
             let res = parser
-                .parse(&buf[index..n], false)
+                .parse(&buf[index..n], n == 0)
                 .map_err(|e| e.to_string())?;
             match res {
                 wasmparser::Chunk::NeedMoreData(_) => {
@@ -47,6 +46,19 @@ pub unsafe fn wasm_verify_file(filename: &str) -> Result<(), String> {
                 }
             }
         }
+    }
+
+    let res = parser.parse(&[], true).map_err(|e| e.to_string())?;
+    match res {
+        wasmparser::Chunk::Parsed { payload, .. } => {
+            match validator.payload(&payload).map_err(|e| e.to_string())? {
+                wasmparser::ValidPayload::End(_) | wasmparser::ValidPayload::Ok => {
+                    return Ok(());
+                }
+                _ => (),
+            }
+        }
+        _ => (),
     }
 
     return Err("unable to detect end of module".to_string());
