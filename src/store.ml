@@ -26,20 +26,15 @@ let root t =
   let conf = Store.Repo.config (repo t) in
   Irmin.Backend.Conf.get conf Irmin_fs.Conf.Key.root
 
+let try_mkdir ?(mode = 0o755) path =
+  Lwt.catch (fun () -> Lwt_unix.mkdir path mode) (fun _ -> Lwt.return_unit)
+
 let v ?(branch = Store.Branch.main) root =
   let config = Irmin_fs.config root in
   let* repo = Store.Repo.v config in
   let* db = Store.of_branch repo branch in
-  let* () =
-    Lwt.catch
-      (fun () -> Lwt_unix.mkdir (root // "tmp") 0o755)
-      (fun _ -> Lwt.return_unit)
-  in
-  let* () =
-    Lwt.catch
-      (fun () -> Lwt_unix.mkdir (root // "objects") 0o755)
-      (fun _ -> Lwt.return_unit)
-  in
+  let* () = try_mkdir (root // "tmp") in
+  let* () = try_mkdir (root // "objects") in
   Lwt.return { db; branch }
 
 let verify_string wasm =
@@ -55,15 +50,19 @@ let verify_file filename =
 let snapshot { db; _ } = Store.Head.get db
 let restore { db; _ } commit = Store.Head.set db commit
 
+let path_of_hash hash =
+  let hash' = Irmin.Type.to_string Store.Hash.t hash in
+  let a = String.sub hash' 0 2 in
+  let b = String.sub hash' 2 (String.length hash' - 2) in
+  "objects" // a // b
+
 let get_hash_and_filename t path =
   let* hash = hash_or_path ~hash:Lwt.return_some ~path:(Store.hash t.db) path in
   match hash with
   | None -> Lwt.return_none
   | Some hash ->
-      let hash' = Irmin.Type.to_string Store.Hash.t hash in
-      let a = String.sub hash' 0 2 in
-      let b = String.sub hash' 2 (String.length hash' - 2) in
-      Lwt.return_some (hash, "objects" // a // b)
+      let path = path_of_hash hash in
+      Lwt.return_some (hash, path)
 
 let set_path t path hash =
   let* tree = Store.Tree.of_hash (repo t) (`Contents (hash, ())) in
@@ -90,13 +89,10 @@ let import t path stream =
           stream)
   in
   let hash = Digestif.SHA256.get !hash in
-  let hash' =
+  let hash =
     Irmin.Hash.SHA256.unsafe_of_raw_string (Digestif.SHA256.to_raw_string hash)
   in
-  let hash = Digestif.SHA256.to_hex hash in
-  let a = String.sub hash 0 2 in
-  let b = String.sub hash 2 (String.length hash - 2) in
-  let dest = root t // "objects" // a // b in
+  let dest = root t // path_of_hash hash in
   let* exists = Lwt_unix.file_exists dest in
   let* () =
     if not exists then
@@ -106,16 +102,12 @@ let import t path stream =
           Unix.unlink tmp;
           raise e
       in
-      let* () =
-        Lwt.catch
-          (fun () -> Lwt_unix.mkdir (Filename.dirname dest) 0o755)
-          (fun _ -> Lwt.return_unit)
-      in
+      let* () = try_mkdir (Filename.dirname dest) in
       Lwt_unix.rename tmp dest
     else Lwt.return_unit
   in
-  let* () = set_path t path hash' in
-  Lwt.return hash'
+  let* () = set_path t path hash in
+  Lwt.return hash
 
 let add { db; _ } path wasm =
   let () = verify_string wasm in
