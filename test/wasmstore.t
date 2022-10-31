@@ -38,7 +38,7 @@ Restore 1
   true
 
 Versions
-  $ wasmstore versions b.wasm | awk '{ print $2 }'
+  $ wasmstore versions b.wasm | awk '{ print $1 }'
   93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476
 
 Restore 2
@@ -47,7 +47,7 @@ Restore 2
 Versions
   $ wasmstore add a.wasm b.wasm
   64a95e86cda3f338b69616f61643e8c303f4470a5feec8ee6a224c1a1d16321f
-  $ wasmstore versions b.wasm | awk '{ print $2 }'
+  $ wasmstore versions b.wasm | awk '{ print $1 }'
   93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476
   64a95e86cda3f338b69616f61643e8c303f4470a5feec8ee6a224c1a1d16321f
 
@@ -78,6 +78,6 @@ Invalid WASM module
 Versions
   $ wasmstore add a.wasm b.wasm
   64a95e86cda3f338b69616f61643e8c303f4470a5feec8ee6a224c1a1d16321f
-  $ wasmstore versions b.wasm | awk '{ print $2 }'
+  $ wasmstore versions b.wasm | awk '{ print $1 }'
   93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476
   64a95e86cda3f338b69616f61643e8c303f4470a5feec8ee6a224c1a1d16321f

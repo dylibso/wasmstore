@@ -3,8 +3,11 @@
 A content-addressable store for WASM modules
 
 - Built-in WASM validation
-- History and branching/merging
-- CLI and HTTP interfaces
+- History management, branching and merging
+- Command-line interface
+- HTTP interface
+  - Simple authentication with roles based on HTTP request methods
+  - Optional SSL
 
 ## HTTP Interface
 
