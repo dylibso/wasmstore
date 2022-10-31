@@ -52,7 +52,7 @@ jobs:
       - name: Save wasmstore executable
         uses: actions/upload-artifact@v3
         with:
-          name: wasmstore-${{ matrix.os }}
+          name: wasmstore-${{ runner.platform }}
           path: |
             _build/install/default/bin/wasmstore
     strategy:
