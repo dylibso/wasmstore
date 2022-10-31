@@ -222,3 +222,25 @@ let merge t branch =
 
 let with_branch t branch = { t with branch }
 let with_author t author = { t with author }
+
+module Hash_set = Set.Make (struct
+  type t = Hash.t
+
+  let compare = Irmin.Type.(unstage @@ compare Hash.t)
+end)
+
+let versions t path =
+  let* lm = Store.last_modified t.db ~n:max_int path in
+  let hashes = ref Hash_set.empty in
+  Lwt_list.filter_map_s
+    (fun commit ->
+      let* store = Store.of_commit commit in
+      let* hash = Store.hash store path in
+      match hash with
+      | None -> Lwt.return_none
+      | Some h ->
+          if Hash_set.mem h !hashes then Lwt.return_none
+          else
+            let () = hashes := Hash_set.add h !hashes in
+            Lwt.return_some (Store.Commit.hash commit, h))
+    lm

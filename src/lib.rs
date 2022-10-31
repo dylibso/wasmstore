@@ -1,6 +1,6 @@
 use std::io::Read;
 
-const BUF_SIZE: usize = 4096;
+const BUF_SIZE: usize = 4096 * 2;
 
 #[ocaml::func]
 #[ocaml::sig("string -> (unit, string) result")]
@@ -35,7 +35,7 @@ pub unsafe fn wasm_verify_file(filename: &str) -> Result<(), String> {
                 wasmparser::Chunk::Parsed { payload, consumed } => {
                     index += consumed;
                     match validator.payload(&payload).map_err(|e| e.to_string())? {
-                        wasmparser::ValidPayload::End(_) => {
+                        wasmparser::ValidPayload::End(_) | wasmparser::ValidPayload::Ok => {
                             return Ok(());
                         }
                         wasmparser::ValidPayload::Parser(p) => {

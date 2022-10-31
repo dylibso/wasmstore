@@ -71,11 +71,15 @@ class Client:
     def rollback(self, path):
         res = self.request("POST", "/rollback/" + normalize_path(path))
         return res.ok
+        
+    def versions(self):
+        res = self.request("GET", "/versions/" + normalize_path(path))
+        return res.json()
 
     def list(self, path=None):
         url = "/modules"
         if path is not None:
-            url += "/" + path
+            url += "/" + normalize_path(path)
         res = self.request("GET", url)
         return res.json()
 

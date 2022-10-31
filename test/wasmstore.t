@@ -37,6 +37,20 @@ Restore 1
   $ wasmstore contains a.wasm
   true
 
+Versions
+  $ wasmstore versions b.wasm | awk '{ print $2 }'
+  93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476
+
+Restore 2
+  $ wasmstore restore $SNAPSHOT2
+
+Versions
+  $ wasmstore add a.wasm b.wasm
+  64a95e86cda3f338b69616f61643e8c303f4470a5feec8ee6a224c1a1d16321f
+  $ wasmstore versions b.wasm | awk '{ print $2 }'
+  93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476
+  64a95e86cda3f338b69616f61643e8c303f4470a5feec8ee6a224c1a1d16321f
+
 Restore 2
   $ wasmstore restore $SNAPSHOT2
 
@@ -48,7 +62,7 @@ Store should no longer contain `a.wasm`
 
 Run garbage collector
   $ wasmstore gc
-  1
+  3
 
 Remove branch
   $ wasmstore branch test --delete
@@ -61,3 +75,9 @@ Invalid WASM module
   $ head -c 5 a.wasm | wasmstore add - invalid.wasm
   ERROR invalid module: unexpected end-of-file (at offset 0x4)
 
+Versions
+  $ wasmstore add a.wasm b.wasm
+  64a95e86cda3f338b69616f61643e8c303f4470a5feec8ee6a224c1a1d16321f
+  $ wasmstore versions b.wasm | awk '{ print $2 }'
+  93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476
+  64a95e86cda3f338b69616f61643e8c303f4470a5feec8ee6a224c1a1d16321f

@@ -59,6 +59,8 @@ branch.
   - Revert to the last commit
 - `GET /api/v1/snapshot`
   - Returns the latest commit hash
+- `GET /api/v1/versions/*`
+  - Returns a mapping from commit hash to module hash of all previous modules stored at the provided path
 - `GET /api/v1/watch`
   - A WebSocket endpoint that sends updates about changes to the store to the client
 

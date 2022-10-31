@@ -117,7 +117,7 @@ let store =
   let aux () root branch author = v ?author ~branch root in
   Term.(const aux $ setup_log $ root $ branch $ author)
 
-let buf_size = 4096
+let buf_size = 4096 * 2
 
 let rec read_file buf ic f =
   let* n = Lwt_io.read_into ic buf 0 buf_size in
@@ -396,6 +396,22 @@ let audit =
   let term = Term.(const cmd $ store $ path 0) in
   Cmd.v info term
 
+let versions =
+  let cmd store path =
+    run
+      (let* t = store in
+       let* versions = versions t path in
+       List.iter
+         (fun (k, v) ->
+           Fmt.pr "%a\t%a\n" (Irmin.Type.pp Hash.t) k (Irmin.Type.pp Hash.t) v)
+         versions;
+       Lwt.return_unit)
+  in
+  let doc = "list previous versions of a path" in
+  let info = Cmd.info "versions" ~doc in
+  let term = Term.(const cmd $ store $ path 0) in
+  Cmd.v info term
+
 let commands =
   Cmd.group (Cmd.info "wasmstore")
     [
@@ -414,6 +430,7 @@ let commands =
       hash;
       watch;
       audit;
+      versions;
       Log.log store;
     ]
 

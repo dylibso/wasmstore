@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+type Hash = string
+
 type Client struct {
 	URL    *url.URL
 	Config *Config
@@ -87,7 +89,7 @@ func (c *Client) Find(path ...string) ([]byte, bool, error) {
 	return res, code == 200, nil
 }
 
-func (c *Client) Add(wasm io.Reader, path ...string) (string, error) {
+func (c *Client) Add(wasm io.Reader, path ...string) (Hash, error) {
 	res, _, err := c.Request("POST", "/module/"+JoinPath(path), wasm)
 	if err != nil {
 		return "", err
@@ -96,7 +98,7 @@ func (c *Client) Add(wasm io.Reader, path ...string) (string, error) {
 	return string(res), nil
 }
 
-func (c *Client) Hash(path ...string) (string, error) {
+func (c *Client) Hash(path ...string) (Hash, error) {
 	res, _, err := c.Request("GET", "/hash/"+JoinPath(path), nil)
 	if err != nil {
 		return "", err
@@ -114,7 +116,7 @@ func (c *Client) Remove(path ...string) (bool, error) {
 	return code == 200, nil
 }
 
-func (c *Client) Snapshot() (string, error) {
+func (c *Client) Snapshot() (Hash, error) {
 	res, _, err := c.Request("GET", "/snapshot", nil)
 	if err != nil {
 		return "", err
@@ -123,7 +125,7 @@ func (c *Client) Snapshot() (string, error) {
 	return string(res), nil
 }
 
-func (c *Client) Restore(hash string, path ...string) (bool, error) {
+func (c *Client) Restore(hash Hash, path ...string) (bool, error) {
 	_, code, err := c.Request("POST", "/restore/"+hash+"/"+JoinPath(path), nil)
 	if err != nil {
 		return false, err
@@ -192,13 +194,28 @@ func (c *Client) Branches() ([]string, error) {
 	return s, nil
 }
 
-func (c *Client) List(path ...string) (map[string]string, error) {
+func (c *Client) Versions(path ...string) ([]Hash, error) {
+	res, _, err := c.Request("GET", "/versions/"+JoinPath(path), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var s []Hash
+	err = json.Unmarshal(res, &s)
+	if err != nil {
+		return nil, err
+	}
+
+	return s, nil
+}
+
+func (c *Client) List(path ...string) (map[string]Hash, error) {
 	res, _, err := c.Request("GET", "/modules/"+JoinPath(path), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var s map[string]string
+	var s map[string]Hash
 	err = json.Unmarshal(res, &s)
 	if err != nil {
 		return nil, err

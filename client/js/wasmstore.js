@@ -98,6 +98,11 @@ class Client {
     return res.ok;
   }
 
+  async versions(path) {
+    let res = await this.request("GET", "/versions/" + pathString(path));
+    return await res.json();
+  }
+
   async list(path = null) {
     let res = await this.request("GET", "/modules/" + pathString(path));
     return await res.json();

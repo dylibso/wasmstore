@@ -114,6 +114,8 @@ val watch : t -> (Yojson.Safe.t -> unit Lwt.t) -> Store.watch Lwt.t
 val unwatch : Store.watch -> unit Lwt.t
 (** [unwatch w] unregisters and disables the watch [w] *)
 
+val versions : t -> string list -> (hash * hash) list Lwt.t
+
 module Branch : sig
   val switch : t -> string -> unit Lwt.t
   (** [switch t branch] sets [t]'s branch to [branch] *)

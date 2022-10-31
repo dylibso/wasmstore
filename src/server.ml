@@ -17,8 +17,7 @@ let response x =
   let+ x = x in
   `Response x
 
-let list_modules t ~headers req path =
-  let t = with_branch' t req in
+let list_modules t ~headers path =
   let* modules = list t path in
   let modules =
     List.map
@@ -37,8 +36,7 @@ let list_branches t ~headers =
   in
   response @@ Server.respond ~headers ~body ~status:`OK ()
 
-let add_module t ~headers req body path =
-  let t = with_branch' t req in
+let add_module t ~headers body path =
   let data = Body.to_stream body in
   Lwt.catch
     (fun () ->
@@ -51,8 +49,7 @@ let add_module t ~headers req body path =
           @@ Server.respond_string ~headers ~status:`Bad_request ~body:msg ()
       | exn -> raise exn)
 
-let find_module t ~headers req path =
-  let t = with_branch' t req in
+let find_module t ~headers path =
   let* filename = get_hash_and_filename t path in
   match filename with
   | Some (hash, filename) ->
@@ -64,13 +61,11 @@ let find_module t ~headers req path =
   | _ ->
       response @@ Server.respond_string ~headers ~status:`Not_found ~body:"" ()
 
-let delete_module t ~headers req path =
-  let t = with_branch' t req in
+let delete_module t ~headers path =
   let* () = remove t path in
   response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
 
-let find_hash t ~headers req path =
-  let t = with_branch' t req in
+let find_hash t ~headers path =
   let* hash = hash t path in
   match hash with
   | Some hash ->
@@ -98,7 +93,7 @@ let require_auth t ~body ~auth ~headers req ~v1 =
         (Request.headers req |> Header.to_string |> String.trim));
   let f t =
     match path' with
-    | Some p -> v1 t (meth, p)
+    | Some p -> v1 (with_branch' t req) (meth, p)
     | None ->
         let* () = Body.drain_body body in
         response
@@ -131,24 +126,22 @@ let callback t ~headers ~auth _conn req body =
   require_auth t ~auth ~headers ~body req ~v1:(fun t -> function
     | `GET, `V1 ("modules" :: path) ->
         let* () = Body.drain_body body in
-        list_modules t ~headers req path
+        list_modules t ~headers path
     | `GET, `V1 ("module" :: path) ->
         let* () = Body.drain_body body in
-        find_module t ~headers req path
+        find_module t ~headers path
     | `GET, `V1 ("hash" :: path) ->
         let* () = Body.drain_body body in
-        find_hash t ~headers req path
-    | `POST, `V1 ("module" :: path) -> add_module t ~headers req body path
+        find_hash t ~headers path
+    | `POST, `V1 ("module" :: path) -> add_module t ~headers body path
     | `DELETE, `V1 ("module" :: path) ->
         let* () = Body.drain_body body in
-        delete_module t ~headers req path
+        delete_module t ~headers path
     | `POST, `V1 [ "gc" ] ->
         let* () = Body.drain_body body in
-        let t = with_branch' t req in
         let* _ = gc t in
         response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
     | `POST, `V1 [ "merge"; from_branch ] -> (
-        let t = with_branch' t req in
         let* res = merge t from_branch in
         match res with
         | Ok _ ->
@@ -159,7 +152,6 @@ let callback t ~headers ~auth _conn req body =
                  ~body:(Irmin.Type.to_string Irmin.Merge.conflict_t r)
                  ())
     | `POST, `V1 ("restore" :: hash :: path) -> (
-        let t = with_branch' t req in
         let hash = Irmin.Type.of_string Store.Hash.t hash in
         match hash with
         | Error _ ->
@@ -178,17 +170,24 @@ let callback t ~headers ~auth _conn req body =
                 response
                 @@ Server.respond_string ~headers ~status:`OK ~body:"" ()))
     | `POST, `V1 ("rollback" :: path) ->
-        let t = with_branch' t req in
         let* () = rollback t ~path () in
         response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
     | `GET, `V1 [ "snapshot" ] ->
-        let t = with_branch' t req in
         let* commit = snapshot t in
         response
         @@ Server.respond_string ~headers ~status:`OK
              ~body:
                (Irmin.Type.to_string Store.Hash.t (Store.Commit.hash commit))
              ()
+    | `GET, `V1 ("versions" :: path) ->
+        let* versions = versions t path in
+        let conv = Irmin.Type.to_string Hash.t in
+        let versions =
+          List.map (fun (k, v) -> (conv k, `String (conv v))) versions
+        in
+        let json = Yojson.Safe.to_string (`Assoc versions) in
+        let body = Body.of_string json in
+        response @@ Server.respond ~headers ~body ~status:`OK ()
     | `GET, `V1 [ "branches" ] ->
         let* () = Body.drain_body body in
         list_branches t ~headers

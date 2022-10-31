@@ -173,6 +173,17 @@ impl Client {
             .collect())
     }
 
+    pub async fn versions(&self, path: impl Into<Path>) -> Result<Vec<Hash>, Error> {
+        let url = format!("/versions/{}", path.into().to_string());
+        let res = self
+            .request(reqwest::Method::GET, self.endpoint(&url), None)
+            .await?;
+        if !res.status().is_success() {
+            return Err(Error::msg(res.text().await?));
+        }
+        Ok(res.json().await?)
+    }
+
     pub async fn branches(&self) -> Result<Vec<String>, Error> {
         let res = self
             .request(reqwest::Method::GET, self.endpoint("/branches"), None)
