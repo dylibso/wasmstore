@@ -123,8 +123,17 @@ func (c *Client) Snapshot() (string, error) {
 	return string(res), nil
 }
 
-func (c *Client) Restore(hash string) (bool, error) {
-	_, code, err := c.Request("POST", "/restore/"+hash, nil)
+func (c *Client) Restore(hash string, path ...string) (bool, error) {
+	_, code, err := c.Request("POST", "/restore/"+hash+"/"+JoinPath(path), nil)
+	if err != nil {
+		return false, err
+	}
+
+	return code == 200, nil
+}
+
+func (c *Client) Rollback(path ...string) (bool, error) {
+	_, code, err := c.Request("POST", "/rollback/"+JoinPath(path), nil)
 	if err != nil {
 		return false, err
 	}

@@ -83,8 +83,13 @@ class Client {
     return await res.text();
   }
 
-  async restore(hash) {
-    let res = await this.request("POST", "/restore/" + hash);
+  async restore(hash, path = null) {
+    let res = await this.request("POST", "/restore/" + hash + (path === null ? "" : "/" + pathString(path)));
+    return res.ok;
+  }
+
+  async rollback(path = null) {
+    let res = await this.request("POST", "/rollback/" + pathString(path));
     return res.ok;
   }
 

@@ -60,8 +60,16 @@ class Client:
         res = self.request("GET", "/snapshot")
         return res.text
 
-    def restore(self, hash):
-        res = self.request("POST", "/restore/" + hash)
+    def restore(self, hash, path=None):
+        url = "/restore/" + hash
+        if path is not None:
+            url += "/"
+            url += normalize_path(path)
+        res = self.request("POST", url)
+        return res.ok
+        
+    def rollback(self, path):
+        res = self.request("POST", "/rollback/" + normalize_path(path))
         return res.ok
 
     def list(self, path=None):

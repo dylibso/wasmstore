@@ -229,6 +229,34 @@ impl Client {
         }
         Ok(())
     }
+
+    pub async fn restore_path(&self, hash: &Hash, path: impl Into<Path>) -> Result<(), Error> {
+        let res = self
+            .request(
+                reqwest::Method::POST,
+                self.endpoint(&format!("/restore/{}/{}", hash.0, path.into().to_string())),
+                None,
+            )
+            .await?;
+        if !res.status().is_success() {
+            return Err(Error::msg(res.text().await?));
+        }
+        Ok(())
+    }
+
+    pub async fn rollback(&self, path: impl Into<Path>) -> Result<(), Error> {
+        let res = self
+            .request(
+                reqwest::Method::POST,
+                self.endpoint(&format!("/rollback/{}", path.into().to_string())),
+                None,
+            )
+            .await?;
+        if !res.status().is_success() {
+            return Err(Error::msg(res.text().await?));
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
