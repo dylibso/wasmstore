@@ -11,6 +11,22 @@ module Store :
         
 exception Validation_error of string
 
+(** Error type and convenience functions *)
+
+module Error : sig
+    type t = [ `Msg of string | `Exception of exn ]
+    type 'a res = ('a, t) result
+    exception Wasmstore of t
+    val to_string: t -> string
+    val unwrap': ('a, t) result -> 'a
+    val unwrap: ('a, t) result Lwt.t -> 'a Lwt.t
+    val wrap': (unit -> 'a) ->  ('a, t) result
+    val wrap: (unit -> 'a Lwt.t) ->  ('a, t) result Lwt.t
+    val throw: t -> 'a
+    val catch': (unit -> 'a) -> (t -> 'a) -> 'a
+    val catch: (unit -> 'a Lwt.t) -> (t -> 'a Lwt.t) -> 'a Lwt.t
+end
+
 type t
 (** The main [Wasmstore] type *)
 
@@ -35,8 +51,13 @@ val v : ?branch:string -> string -> t Lwt.t
 val snapshot : t -> Store.commit Lwt.t
 (** [snapshot t] gets the current head commit *)
 
-val restore : t -> Store.commit -> unit Lwt.t
-(** [restore t commit] sets the head commit *)
+val restore : t -> ?path:string list -> Store.commit -> unit Lwt.t
+(** [restore t commit] sets the head commit, if [path] is provided then only the specfied path
+    will be reverted *)
+
+val rollback : t -> ?path:string list -> unit -> unit Lwt.t
+(** [rollback t] sets the head commit to the last commit, if [path] is provided then only the specfied 
+    path will be reverted *)
 
 val find : t -> string list -> string option Lwt.t
 (** [find t path] returns the module associated with [path], if path is a single-item list containing 
@@ -92,7 +113,7 @@ module Branch : sig
   val switch : t -> string -> unit Lwt.t
   (** [switch t branch] sets [t]'s branch to [branch] *)
 
-  val create : t -> string -> (t, [ `Msg of string ]) result Lwt.t
+  val create : t -> string -> t Error.res Lwt.t
   (** [create t branch] creates a new branch, returning an error result if the
       branch already exists *)
 

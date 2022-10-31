@@ -18,9 +18,9 @@ exception Validation_error of string
 let hash_or_path ~hash ~path = function
   | [ hash_or_path ] -> (
       match Irmin.Type.of_string Store.Hash.t hash_or_path with
-      | Ok x -> hash x
-      | Error _ -> path [ hash_or_path ])
-  | x -> path x
+      | Ok x -> Error.mk @@ fun () -> hash x
+      | Error _ -> Error.mk @@ fun () -> path [ hash_or_path ])
+  | x -> Error.mk @@ fun () -> path x
 
 let root t =
   let conf = Store.Repo.config (repo t) in
@@ -48,7 +48,49 @@ let verify_file filename =
   | Error e -> raise (Validation_error e)
 
 let snapshot { db; _ } = Store.Head.get db
-let restore { db; _ } commit = Store.Head.set db commit
+
+let restore t ?path commit =
+  match path with
+  | None -> Error.mk @@ fun () -> Store.Head.set t.db commit
+  | Some path ->
+      let info = Info.v "Restore %a" (Irmin.Type.pp Store.Path.t) path in
+      let tree = Store.Commit.tree commit in
+      Error.mk @@ fun () ->
+      Store.with_tree_exn ~info t.db path (fun _ ->
+          Store.Tree.find_tree tree path)
+
+let tree_opt_equal = Irmin.Type.(unstage (equal (option Store.Tree.t)))
+
+let rollback t ?path () : unit Lwt.t =
+  let* head = Store.Head.get t.db in
+  let parents = Store.Commit.parents head in
+  let* parents = Lwt_list.filter_map_s (Store.Commit.of_key (repo t)) parents in
+  match parents with
+  | [ commit ] -> restore t ?path commit
+  | hd :: tl ->
+      let path = Option.value ~default:[] path in
+      let* tree = Store.Tree.find_tree (Store.Commit.tree hd) path in
+      let* equal =
+        Lwt_list.for_all_p
+          (fun commit' ->
+            let+ tree' =
+              Store.Tree.find_tree (Store.Commit.tree commit') path
+            in
+            tree_opt_equal tree tree')
+          tl
+      in
+      if equal then restore t ~path hd
+      else Error.throw (`Msg "unable to rollback due to conflicting histories")
+  | [] -> (
+      let info =
+        Info.v "Rollback %a" Irmin.Type.(pp @@ option Store.Path.t) path
+      in
+      match path with
+      | Some path -> Error.mk @@ fun () -> Store.remove_exn ~info t.db path
+      | None ->
+          Error.mk @@ fun () ->
+          Store.with_tree_exn ~info t.db [] (fun _ ->
+              Lwt.return_some @@ Store.Tree.empty ()))
 
 let path_of_hash hash =
   let hash' = Irmin.Type.to_string Store.Hash.t hash in
@@ -113,6 +155,7 @@ let add { db; _ } path wasm =
   let () = verify_string wasm in
   let info = Info.v "Add %a" (Irmin.Type.pp Store.Path.t) path in
   let f hash =
+    Error.mk @@ fun () ->
     Store.set_exn db [ Irmin.Type.to_string Store.Hash.t hash ] wasm ~info
   in
   let+ () =
@@ -124,7 +167,7 @@ let add { db; _ } path wasm =
           Store.Backend.Repo.batch (Store.repo db) (fun contents _ _ ->
               let+ _ = Store.save_contents contents wasm in
               ())
-        else Store.set_exn db path wasm ~info)
+        else Error.mk @@ fun () -> Store.set_exn db path wasm ~info)
       path
   in
   Store.Contents.hash wasm
@@ -155,6 +198,7 @@ let remove { db; _ } path =
     in
     let* tree = Store.tree db in
     let* tree = aux tree [] in
+    Error.mk @@ fun () ->
     Store.test_and_set_tree_exn db path ~test:(Some tree) ~set:(Some tree) ~info
   in
   hash_or_path ~path:(Store.remove_exn db ~info) ~hash path

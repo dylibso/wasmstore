@@ -30,6 +30,14 @@ let setup_log =
 
 let default_root = Filename.concat (Sys.getenv "HOME") ".wasmstore"
 
+let run f =
+  Error.catch
+    (fun () -> f)
+    (fun err ->
+      Logs.err (fun l -> l "%s" (Error.to_string err));
+      Lwt.return_unit)
+  |> Lwt_main.run
+
 let root =
   let doc = "root" in
   let env = Cmd.Env.info "WASMSTORE_ROOT" in
@@ -139,7 +147,7 @@ let add =
     let path =
       match path with Some p -> p | None -> [ Filename.basename filename ]
     in
-    Lwt_main.run
+    run
       (let* t = store in
        let* data =
          if filename = "-" then stdin_stream () else file_stream filename
@@ -161,7 +169,7 @@ let add =
 
 let find =
   let cmd store path =
-    Lwt_main.run
+    run
       (let* t = store in
        let+ value = find t path in
        match value with None -> exit 1 | Some value -> print_string value)
@@ -173,7 +181,7 @@ let find =
 
 let remove =
   let cmd store path =
-    Lwt_main.run
+    run
       (let* t = store in
        Wasmstore.remove t path)
   in
@@ -184,7 +192,7 @@ let remove =
 
 let merge =
   let cmd store branch_from =
-    Lwt_main.run
+    run
       (let* t = store in
        let+ res = merge t branch_from in
        match res with
@@ -202,7 +210,7 @@ let merge =
 
 let gc =
   let cmd store =
-    Lwt_main.run
+    run
       (let* t = store in
        let+ res = gc t in
        Printf.printf "%d\n" res)
@@ -214,7 +222,7 @@ let gc =
 
 let list =
   let cmd store path =
-    Lwt_main.run
+    run
       (let* t = store in
        let+ items = list t path in
        List.iter
@@ -233,7 +241,7 @@ let list =
 
 let snapshot =
   let cmd store =
-    Lwt_main.run
+    run
       (let* t = store in
        let+ head = snapshot t in
        print_endline
@@ -246,7 +254,7 @@ let snapshot =
 
 let restore =
   let cmd store commit =
-    Lwt_main.run
+    run
       (let* t = store in
        let hash = Irmin.Type.of_string Store.Hash.t commit in
        match hash with
@@ -268,7 +276,7 @@ let restore =
 
 let contains =
   let cmd store path =
-    Lwt_main.run
+    run
       (let* t = store in
        let+ value = contains t path in
        Format.printf "%b\n" value)
@@ -280,7 +288,7 @@ let contains =
 
 let hash =
   let cmd store path =
-    Lwt_main.run
+    run
       (let* t = store in
        let+ hash = Wasmstore.hash t path in
        match hash with
@@ -304,7 +312,7 @@ let server =
     with _ -> cmd store host port auth cors tls
   in
   let cmd store host port auth cors tls =
-    Lwt_main.run (cmd store host port auth cors tls)
+    run (cmd store host port auth cors tls)
   in
   let doc = "Run server" in
   let info = Cmd.info "server" ~doc in
@@ -313,17 +321,15 @@ let server =
 
 let branch =
   let cmd () root branch_name delete list =
-    Lwt_main.run
+    run
       (let* t = v root in
        if list then
          let+ branches = Branch.list t in
          List.iter print_endline branches
        else if delete then Branch.delete t branch_name
        else
-         let+ res = Branch.create t branch_name in
-         match res with
-         | Ok _ -> ()
-         | Error (`Msg s) -> Printf.fprintf stderr "ERROR: %s\n" s)
+         let* _ = Error.unwrap @@ Branch.create t branch_name in
+         Lwt.return_unit)
   in
   let doc = "Modify a branch" in
   let info = Cmd.info "branch" ~doc in
@@ -342,7 +348,7 @@ let run_command command diff =
 
 let watch =
   let cmd store command =
-    Lwt_main.run
+    run
       (let* t = store in
        let* _w = watch t (run_command command) in
        let t, _ = Lwt.task () in

@@ -103,3 +103,6 @@ let gc { db; branch = current_branch } =
       a
   in
   Lwt.return !total
+
+let gc t =
+  Error.mk @@ fun () -> gc t
