@@ -49,7 +49,7 @@ jobs:
       - name: Generate executable
         run: |
           opam exec -- dune build
-          mv _build/default/install/bin/wasmstore ./wasmstore
+          mv _build/install/default/bin/wasmstore ./wasmstore
       - name: Save wasmstore executable
         uses: actions/upload-artifact@v3
         with:
