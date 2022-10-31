@@ -183,9 +183,11 @@ let callback t ~headers ~auth _conn req body =
         let* versions = versions t path in
         let conv = Irmin.Type.to_string Hash.t in
         let versions =
-          List.map (fun (k, v) -> (conv k, `String (conv v))) versions
+          List.map
+            (fun (k, `Commit v) -> `List [ `String (conv k); `String (conv v) ])
+            versions
         in
-        let json = Yojson.Safe.to_string (`Assoc versions) in
+        let json = Yojson.Safe.to_string (`List versions) in
         let body = Body.of_string json in
         response @@ Server.respond ~headers ~body ~status:`OK ()
     | `GET, `V1 [ "branches" ] ->

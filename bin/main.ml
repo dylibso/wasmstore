@@ -402,8 +402,9 @@ let versions =
       (let* t = store in
        let* versions = versions t path in
        List.iter
-         (fun (k, v) ->
-           Fmt.pr "%a\t%a\n" (Irmin.Type.pp Hash.t) k (Irmin.Type.pp Hash.t) v)
+         (fun (k, `Commit v) ->
+           Fmt.pr "%a\tcommit: %a\n" (Irmin.Type.pp Hash.t) k
+             (Irmin.Type.pp Hash.t) v)
          versions;
        Lwt.return_unit)
   in

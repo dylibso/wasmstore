@@ -242,5 +242,5 @@ let versions t path =
           if Hash_set.mem h !hashes then Lwt.return_none
           else
             let () = hashes := Hash_set.add h !hashes in
-            Lwt.return_some (Store.Commit.hash commit, h))
+            Lwt.return_some (h, `Commit (Store.Commit.hash commit)))
     lm

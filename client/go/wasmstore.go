@@ -194,13 +194,13 @@ func (c *Client) Branches() ([]string, error) {
 	return s, nil
 }
 
-func (c *Client) Versions(path ...string) ([]Hash, error) {
+func (c *Client) Versions(path ...string) ([][]Hash, error) {
 	res, _, err := c.Request("GET", "/versions/"+JoinPath(path), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var s []Hash
+	var s [][]Hash
 	err = json.Unmarshal(res, &s)
 	if err != nil {
 		return nil, err

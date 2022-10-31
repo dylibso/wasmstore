@@ -3,7 +3,7 @@ pub use anyhow::Error;
 mod hash;
 mod path;
 
-pub use hash::Hash;
+pub use hash::{Commit, Hash};
 pub use path::Path;
 
 pub struct Client {
@@ -173,7 +173,7 @@ impl Client {
             .collect())
     }
 
-    pub async fn versions(&self, path: impl Into<Path>) -> Result<Vec<Hash>, Error> {
+    pub async fn versions(&self, path: impl Into<Path>) -> Result<Vec<(Hash, Commit)>, Error> {
         let url = format!("/versions/{}", path.into().to_string());
         let res = self
             .request(reqwest::Method::GET, self.endpoint(&url), None)
@@ -216,7 +216,7 @@ impl Client {
         Ok(())
     }
 
-    pub async fn snapshot(&self) -> Result<Hash, Error> {
+    pub async fn snapshot(&self) -> Result<Commit, Error> {
         let res = self
             .request(reqwest::Method::GET, self.endpoint("/snapshot"), None)
             .await?;
@@ -224,10 +224,10 @@ impl Client {
             return Err(Error::msg(res.text().await?));
         }
         let hash = res.text().await?;
-        Ok(Hash(hash))
+        Ok(Commit(hash))
     }
 
-    pub async fn restore(&self, hash: &Hash) -> Result<(), Error> {
+    pub async fn restore(&self, hash: &Commit) -> Result<(), Error> {
         let res = self
             .request(
                 reqwest::Method::POST,
@@ -241,7 +241,7 @@ impl Client {
         Ok(())
     }
 
-    pub async fn restore_path(&self, hash: &Hash, path: impl Into<Path>) -> Result<(), Error> {
+    pub async fn restore_path(&self, hash: &Commit, path: impl Into<Path>) -> Result<(), Error> {
         let res = self
             .request(
                 reqwest::Method::POST,
