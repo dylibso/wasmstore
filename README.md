@@ -53,8 +53,10 @@ branch.
   - Run garbage collection
 - `POST /api/v1/merge/:branch`
   - Merge the specified branch into the default branch
-- `POST /api/v1/restore/:hash`
+- `POST /api/v1/restore/:hash/*`
   - Revert to the specified commit hash
+- `POST /api/v1/rollback/*`
+  - Revert to the last commit
 - `GET /api/v1/snapshot`
   - Returns the latest commit hash
 - `GET /api/v1/watch`

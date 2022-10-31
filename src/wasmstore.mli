@@ -8,23 +8,25 @@ module Store :
      and type Schema.Branch.t = string
      and type hash = Irmin.Hash.SHA256.t
      and module Schema.Info = Irmin.Info.Default
-        
+
 exception Validation_error of string
 
 (** Error type and convenience functions *)
 
 module Error : sig
-    type t = [ `Msg of string | `Exception of exn ]
-    type 'a res = ('a, t) result
-    exception Wasmstore of t
-    val to_string: t -> string
-    val unwrap': ('a, t) result -> 'a
-    val unwrap: ('a, t) result Lwt.t -> 'a Lwt.t
-    val wrap': (unit -> 'a) ->  ('a, t) result
-    val wrap: (unit -> 'a Lwt.t) ->  ('a, t) result Lwt.t
-    val throw: t -> 'a
-    val catch': (unit -> 'a) -> (t -> 'a) -> 'a
-    val catch: (unit -> 'a Lwt.t) -> (t -> 'a Lwt.t) -> 'a Lwt.t
+  type t = [ `Msg of string | `Exception of exn ]
+  type 'a res = ('a, t) result
+
+  exception Wasmstore of t
+
+  val to_string : t -> string
+  val unwrap' : ('a, t) result -> 'a
+  val unwrap : ('a, t) result Lwt.t -> 'a Lwt.t
+  val wrap' : (unit -> 'a) -> ('a, t) result
+  val wrap : (unit -> 'a Lwt.t) -> ('a, t) result Lwt.t
+  val throw : t -> 'a
+  val catch' : (unit -> 'a) -> (t -> 'a) -> 'a
+  val catch : (unit -> 'a Lwt.t) -> (t -> 'a Lwt.t) -> 'a Lwt.t
 end
 
 type t
@@ -45,7 +47,7 @@ val store : t -> Store.t
 val repo : t -> Store.repo
 (** [repo t] returns the underlying irmin repo *)
 
-val v : ?branch:string -> string -> t Lwt.t
+val v : ?author:string -> ?branch:string -> string -> t Lwt.t
 (** [v ~branch root] opens a store open to [branch] on disk at [root] *)
 
 val snapshot : t -> Store.commit Lwt.t
@@ -67,7 +69,7 @@ val find : t -> string list -> string option Lwt.t
 val add : t -> string list -> string -> hash Lwt.t
 (** [add t path wasm_module] sets [path] to [wasm_module] after verifying the module. If [path] is a hash
     then it will be converted to "[$HASH].wasm". *)
-        
+
 val import : t -> string list -> string Lwt_stream.t -> hash Lwt.t
 
 val hash : t -> string list -> hash option Lwt.t
@@ -100,8 +102,11 @@ val get_hash_and_filename : t -> string list -> (hash * string) option Lwt.t
 val merge : t -> string -> (unit, Irmin.Merge.conflict) result Lwt.t
 (** [merge t branch] merges [branch] into [t] *)
 
-val with_branch : t -> string -> t Lwt.t
+val with_branch : t -> string -> t
 (** [with_branch t branch] returns a copy of [t] with [branch] selected *)
+
+val with_author : t -> string -> t
+(** [with_author t name] returns a copy of [t] with [name] as the current author *)
 
 val watch : t -> (Yojson.Safe.t -> unit Lwt.t) -> Store.watch Lwt.t
 (** [watch t f] creates a new watch that calls [f] for each new commit *)

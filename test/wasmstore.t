@@ -3,6 +3,13 @@ Add wasm module `a`
   $ cat a.wasm | wasmstore add - a.wasm 
   64a95e86cda3f338b69616f61643e8c303f4470a5feec8ee6a224c1a1d16321f
 
+Rollback `a`
+  $ wasmstore rollback a.wasm
+  $ wasmstore contains a.wasm
+  false
+  $ wasmstore add a.wasm
+  64a95e86cda3f338b69616f61643e8c303f4470a5feec8ee6a224c1a1d16321f
+
 Add wasm module `b`
   $ wasmstore add b.wasm
   93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476
@@ -48,4 +55,9 @@ Remove branch
 
 Run garbage collector
   $ wasmstore gc
-  5
+  8
+
+Invalid WASM module
+  $ head -c 5 a.wasm | wasmstore add - invalid.wasm
+  ERROR invalid module: unexpected end-of-file (at offset 0x4)
+

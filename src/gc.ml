@@ -17,10 +17,10 @@ let rec get_first_parents repo commit =
       let+ p = Lwt_list.map_s (get_first_parents repo) x in
       List.flatten p
 
-let gc { db; branch = current_branch } =
-  let repo = Store.repo db in
+let gc t =
+  let repo = repo t in
   let* branches = Store.Branch.list repo in
-  let info = Info.v "GC" () in
+  let info = info t "GC" () in
   let live = ref Hash_set.empty in
   let* max =
     Lwt_list.map_s
@@ -30,7 +30,7 @@ let gc { db; branch = current_branch } =
         | [] -> Lwt.return (`Commit (Store.Commit.key current))
         | _ ->
             let+ commit =
-              if branch = current_branch then
+              if String.equal branch t.branch then
                 let* db = Store.of_branch repo branch in
                 let* tree = Store.tree db in
                 let* commit = Store.Commit.v repo ~info ~parents:[] tree in
@@ -104,5 +104,4 @@ let gc { db; branch = current_branch } =
   in
   Lwt.return !total
 
-let gc t =
-  Error.mk @@ fun () -> gc t
+let gc t = Error.mk @@ fun () -> gc t

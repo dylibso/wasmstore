@@ -11,14 +11,14 @@ let () = Irmin.Backend.Watch.set_listen_dir_hook Irmin_watcher.hook
 let with_branch' t req =
   let h = Cohttp.Request.headers req in
   let branch = Cohttp.Header.get h "Wasmstore-Branch" in
-  match branch with None -> Lwt.return t | Some branch -> with_branch t branch
+  match branch with None -> t | Some branch -> with_branch t branch
 
 let response x =
   let+ x = x in
   `Response x
 
 let list_modules t ~headers req path =
-  let* t = with_branch' t req in
+  let t = with_branch' t req in
   let* modules = list t path in
   let modules =
     List.map
@@ -38,7 +38,7 @@ let list_branches t ~headers =
   response @@ Server.respond ~headers ~body ~status:`OK ()
 
 let add_module t ~headers req body path =
-  let* t = with_branch' t req in
+  let t = with_branch' t req in
   let data = Body.to_stream body in
   Lwt.catch
     (fun () ->
@@ -51,10 +51,38 @@ let add_module t ~headers req body path =
           @@ Server.respond_string ~headers ~status:`Bad_request ~body:msg ()
       | exn -> raise exn)
 
+let find_module t ~headers req path =
+  let t = with_branch' t req in
+  let* filename = get_hash_and_filename t path in
+  match filename with
+  | Some (hash, filename) ->
+      let headers =
+        Header.add headers "Wasmstore-Hash"
+          (Irmin.Type.to_string Store.Hash.t hash)
+      in
+      response @@ Server.respond_file ~headers ~fname:(root t // filename) ()
+  | _ ->
+      response @@ Server.respond_string ~headers ~status:`Not_found ~body:"" ()
+
+let delete_module t ~headers req path =
+  let t = with_branch' t req in
+  let* () = remove t path in
+  response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
+
+let find_hash t ~headers req path =
+  let t = with_branch' t req in
+  let* hash = hash t path in
+  match hash with
+  | Some hash ->
+      let body = Body.of_string (Irmin.Type.to_string Store.Hash.t hash) in
+      response @@ Server.respond ~headers ~status:`OK ~body ()
+  | None ->
+      response @@ Server.respond_string ~headers ~status:`Not_found ~body:"" ()
+
 let remove_prefix path =
   match path with "api" :: "v1" :: tl -> Some (`V1 tl) | _ -> None
 
-let require_auth ~body ~auth ~headers req ~v1 =
+let require_auth t ~body ~auth ~headers req ~v1 =
   let uri = Request.uri req in
   let meth = Request.meth req in
   let path = Uri.path uri in
@@ -68,15 +96,15 @@ let require_auth ~body ~auth ~headers req ~v1 =
         (Code.string_of_method meth)
         path
         (Request.headers req |> Header.to_string |> String.trim));
-  let f () =
+  let f t =
     match path' with
-    | Some p -> v1 (meth, p)
+    | Some p -> v1 t (meth, p)
     | None ->
         let* () = Body.drain_body body in
         response
         @@ Server.respond_string ~headers ~status:`Not_found ~body:"" ()
   in
-  if Hashtbl.length auth = 0 then f ()
+  if Hashtbl.length auth = 0 then f t
   else
     let h = Request.headers req in
     let key = Header.get h "Wasmstore-Auth" |> Option.value ~default:"" in
@@ -84,14 +112,14 @@ let require_auth ~body ~auth ~headers req ~v1 =
       Hashtbl.find_opt auth key |> Option.map (String.split_on_char ',')
     in
     match perms with
-    | Some [ "*" ] -> f ()
+    | Some [ "*" ] -> f t
     | Some x ->
         let exists =
           List.exists
             (fun m -> String.equal (Cohttp.Code.string_of_method meth) m)
             x
         in
-        if exists then f ()
+        if exists then f t
         else
           response
           @@ Server.respond_string ~headers ~status:`Unauthorized ~body:"" ()
@@ -99,36 +127,8 @@ let require_auth ~body ~auth ~headers req ~v1 =
         response
         @@ Server.respond_string ~headers ~status:`Unauthorized ~body:"" ()
 
-let find_module t ~headers req path =
-  let* t = with_branch' t req in
-  let* filename = get_hash_and_filename t path in
-  match filename with
-  | Some (hash, filename) ->
-      let headers =
-        Header.add headers "Wasmstore-Hash"
-          (Irmin.Type.to_string Store.Hash.t hash)
-      in
-      response @@ Server.respond_file ~headers ~fname:(root t // filename) ()
-  | _ ->
-      response @@ Server.respond_string ~headers ~status:`Not_found ~body:"" ()
-
-let delete_module t ~headers req path =
-  let* t = with_branch' t req in
-  let* () = remove t path in
-  response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
-
-let find_hash t ~headers req path =
-  let* t = with_branch' t req in
-  let* hash = hash t path in
-  match hash with
-  | Some hash ->
-      let body = Body.of_string (Irmin.Type.to_string Store.Hash.t hash) in
-      response @@ Server.respond ~headers ~status:`OK ~body ()
-  | None ->
-      response @@ Server.respond_string ~headers ~status:`Not_found ~body:"" ()
-
 let callback t ~headers ~auth _conn req body =
-  require_auth ~auth ~headers ~body req ~v1:(function
+  require_auth t ~auth ~headers ~body req ~v1:(fun t -> function
     | `GET, `V1 ("modules" :: path) ->
         let* () = Body.drain_body body in
         list_modules t ~headers req path
@@ -144,11 +144,11 @@ let callback t ~headers ~auth _conn req body =
         delete_module t ~headers req path
     | `POST, `V1 [ "gc" ] ->
         let* () = Body.drain_body body in
-        let* t = with_branch' t req in
+        let t = with_branch' t req in
         let* _ = gc t in
         response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
     | `POST, `V1 [ "merge"; from_branch ] -> (
-        let* t = with_branch' t req in
+        let t = with_branch' t req in
         let* res = merge t from_branch in
         match res with
         | Ok _ ->
@@ -158,8 +158,8 @@ let callback t ~headers ~auth _conn req body =
             @@ Server.respond_string ~headers ~status:`Bad_request
                  ~body:(Irmin.Type.to_string Irmin.Merge.conflict_t r)
                  ())
-    | `POST, `V1 [ "restore"; hash ] -> (
-        let* t = with_branch' t req in
+    | `POST, `V1 ("restore" :: hash :: path) -> (
+        let t = with_branch' t req in
         let hash = Irmin.Type.of_string Store.Hash.t hash in
         match hash with
         | Error _ ->
@@ -174,11 +174,15 @@ let callback t ~headers ~auth _conn req body =
                 @@ Server.respond_string ~headers ~status:`Not_found
                      ~body:"commit not found" ()
             | Some commit ->
-                let* () = restore t commit in
+                let* () = restore ~path t commit in
                 response
                 @@ Server.respond_string ~headers ~status:`OK ~body:"" ()))
+    | `POST, `V1 ("rollback" :: path) ->
+        let t = with_branch' t req in
+        let* () = rollback t ~path () in
+        response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
     | `GET, `V1 [ "snapshot" ] ->
-        let* t = with_branch' t req in
+        let t = with_branch' t req in
         let* commit = snapshot t in
         response
         @@ Server.respond_string ~headers ~status:`OK

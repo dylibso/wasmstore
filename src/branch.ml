@@ -10,7 +10,7 @@ let create t branch =
     let info = Info.v "Create branch %s" branch in
     let* db = Store.of_branch (Store.repo t.db) branch in
     let* _ = Store.merge_with_branch db ~info t.branch in
-    Lwt.return_ok { db; branch }
+    Lwt.return_ok { t with db; branch }
 
 let switch t branch =
   let* exists = Store.Branch.mem (Store.repo t.db) branch in

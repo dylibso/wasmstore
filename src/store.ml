@@ -6,7 +6,7 @@ module Store = Irmin_fs_unix.Make (Schema)
 module Info = Irmin_unix.Info (Store.Info)
 module Hash = Store.Hash
 
-type t = { mutable db : Store.t; mutable branch : string }
+type t = { mutable db : Store.t; mutable branch : string; author : string }
 type hash = Store.Hash.t
 
 let store { db; _ } = db
@@ -14,6 +14,8 @@ let branch { branch; _ } = branch
 let repo { db; _ } = Store.repo db
 
 exception Validation_error of string
+
+let info t = Info.v ~author:t.author
 
 let hash_or_path ~hash ~path = function
   | [ hash_or_path ] -> (
@@ -29,13 +31,13 @@ let root t =
 let try_mkdir ?(mode = 0o755) path =
   Lwt.catch (fun () -> Lwt_unix.mkdir path mode) (fun _ -> Lwt.return_unit)
 
-let v ?(branch = Store.Branch.main) root =
+let v ?(author = "wasmstore") ?(branch = Store.Branch.main) root =
   let config = Irmin_fs.config root in
   let* repo = Store.Repo.v config in
   let* db = Store.of_branch repo branch in
   let* () = try_mkdir (root // "tmp") in
   let* () = try_mkdir (root // "objects") in
-  Lwt.return { db; branch }
+  Lwt.return { db; branch; author }
 
 let verify_string wasm =
   match Rust.wasm_verify_string wasm with
@@ -51,9 +53,9 @@ let snapshot { db; _ } = Store.Head.get db
 
 let restore t ?path commit =
   match path with
-  | None -> Error.mk @@ fun () -> Store.Head.set t.db commit
+  | None | Some [] -> Error.mk @@ fun () -> Store.Head.set t.db commit
   | Some path ->
-      let info = Info.v "Restore %a" (Irmin.Type.pp Store.Path.t) path in
+      let info = info t "Restore %a" (Irmin.Type.pp Store.Path.t) path in
       let tree = Store.Commit.tree commit in
       Error.mk @@ fun () ->
       Store.with_tree_exn ~info t.db path (fun _ ->
@@ -61,36 +63,15 @@ let restore t ?path commit =
 
 let tree_opt_equal = Irmin.Type.(unstage (equal (option Store.Tree.t)))
 
-let rollback t ?path () : unit Lwt.t =
-  let* head = Store.Head.get t.db in
-  let parents = Store.Commit.parents head in
-  let* parents = Lwt_list.filter_map_s (Store.Commit.of_key (repo t)) parents in
-  match parents with
-  | [ commit ] -> restore t ?path commit
-  | hd :: tl ->
-      let path = Option.value ~default:[] path in
-      let* tree = Store.Tree.find_tree (Store.Commit.tree hd) path in
-      let* equal =
-        Lwt_list.for_all_p
-          (fun commit' ->
-            let+ tree' =
-              Store.Tree.find_tree (Store.Commit.tree commit') path
-            in
-            tree_opt_equal tree tree')
-          tl
-      in
-      if equal then restore t ~path hd
-      else Error.throw (`Msg "unable to rollback due to conflicting histories")
-  | [] -> (
-      let info =
-        Info.v "Rollback %a" Irmin.Type.(pp @@ option Store.Path.t) path
-      in
-      match path with
-      | Some path -> Error.mk @@ fun () -> Store.remove_exn ~info t.db path
-      | None ->
-          Error.mk @@ fun () ->
-          Store.with_tree_exn ~info t.db [] (fun _ ->
-              Lwt.return_some @@ Store.Tree.empty ()))
+let rollback t ?(path = []) () : unit Lwt.t =
+  let* lm = Store.last_modified ~n:2 t.db path in
+  match lm with
+  | [ _; commit ] -> restore t ~path commit
+  | _ ->
+      let info = info t "Rollback %a" Irmin.Type.(pp Store.Path.t) path in
+      Error.mk @@ fun () ->
+      Store.with_tree_exn ~info t.db path (fun _ ->
+          Lwt.return_some @@ Store.Tree.empty ())
 
 let path_of_hash hash =
   let hash' = Irmin.Type.to_string Store.Hash.t hash in
@@ -111,7 +92,7 @@ let set_path t path hash =
   match tree with
   | None -> failwith "hash mismatch"
   | Some tree ->
-      let info = Info.v "Import %a" (Irmin.Type.pp Store.Path.t) path in
+      let info = info t "Import %a" (Irmin.Type.pp Store.Path.t) path in
       Store.set_tree_exn t.db path tree ~info
 
 let import t path stream =
@@ -151,23 +132,24 @@ let import t path stream =
   let* () = set_path t path hash in
   Lwt.return hash
 
-let add { db; _ } path wasm =
+let add t path wasm =
   let () = verify_string wasm in
-  let info = Info.v "Add %a" (Irmin.Type.pp Store.Path.t) path in
+  let info = info t "Add %a" (Irmin.Type.pp Store.Path.t) path in
   let f hash =
     Error.mk @@ fun () ->
-    Store.set_exn db [ Irmin.Type.to_string Store.Hash.t hash ] wasm ~info
+    Store.set_exn t.db [ Irmin.Type.to_string Store.Hash.t hash ] wasm ~info
   in
   let+ () =
     hash_or_path ~hash:f
       ~path:(fun path ->
         (* If the path is empty then just add the contents to the store without
            associating it with a path *)
-        if path = [] then
-          Store.Backend.Repo.batch (Store.repo db) (fun contents _ _ ->
-              let+ _ = Store.save_contents contents wasm in
-              ())
-        else Error.mk @@ fun () -> Store.set_exn db path wasm ~info)
+        match path with
+        | [] ->
+            Store.Backend.Repo.batch (repo t) (fun contents _ _ ->
+                let+ _ = Store.save_contents contents wasm in
+                ())
+        | _ -> Error.mk @@ fun () -> Store.set_exn t.db path wasm ~info)
       path
   in
   Store.Contents.hash wasm
@@ -180,8 +162,8 @@ let hash t path =
 
 let hash_eq = Irmin.Type.(unstage (equal Store.Hash.t))
 
-let remove { db; _ } path =
-  let info = Info.v "Remove %a" (Irmin.Type.pp Store.Path.t) path in
+let remove t path =
+  let info = info t "Remove %a" (Irmin.Type.pp Store.Path.t) path in
   let hash h =
     (* Search through the current tree for any contents that match [h] *)
     let rec aux tree path =
@@ -196,12 +178,13 @@ let remove { db; _ } path =
             (fun tree -> function p, _ -> aux tree (Store.Path.rcons path p))
             tree items
     in
-    let* tree = Store.tree db in
+    let* tree = Store.tree t.db in
     let* tree = aux tree [] in
     Error.mk @@ fun () ->
-    Store.test_and_set_tree_exn db path ~test:(Some tree) ~set:(Some tree) ~info
+    Store.test_and_set_tree_exn t.db path ~test:(Some tree) ~set:(Some tree)
+      ~info
   in
-  hash_or_path ~path:(Store.remove_exn db ~info) ~hash path
+  hash_or_path ~path:(Store.remove_exn t.db ~info) ~hash path
 
 let list { db; _ } path =
   let rec aux path =
@@ -233,10 +216,9 @@ let contains t path =
     ~path:(fun path -> Store.mem t.db path)
     path
 
-let merge { db; _ } branch =
-  let info = Info.v "Merge %s" branch in
-  Store.merge_with_branch db ~info branch
+let merge t branch =
+  let info = info t "Merge %s" branch in
+  Store.merge_with_branch t.db ~info branch
 
-let with_branch t branch =
-  let root = root t in
-  v ~branch root
+let with_branch t branch = { t with branch }
+let with_author t author = { t with author }

@@ -1,6 +1,7 @@
 open Lwt.Syntax
 open Wasmstore
 open Cmdliner
+open Util
 
 let reporter ppf =
   let report src level ~over k msgf =
@@ -30,14 +31,6 @@ let setup_log =
 
 let default_root = Filename.concat (Sys.getenv "HOME") ".wasmstore"
 
-let run f =
-  Error.catch
-    (fun () -> f)
-    (fun err ->
-      Logs.err (fun l -> l "%s" (Error.to_string err));
-      Lwt.return_unit)
-  |> Lwt_main.run
-
 let root =
   let doc = "root" in
   let env = Cmd.Env.info "WASMSTORE_ROOT" in
@@ -50,6 +43,12 @@ let branch =
     value
     & opt string Store.Branch.main
     & info [ "branch" ] ~docv:"NAME" ~doc ~env)
+
+let author =
+  let doc = "author" in
+  let env = Cmd.Env.info "WASMSTORE_AUTHOR" in
+  Arg.(
+    value & opt (some string) None & info [ "author" ] ~docv:"NAME" ~doc ~env)
 
 let tls =
   let doc = "tls key file and certificate file" in
@@ -115,8 +114,8 @@ let cors =
   Arg.(value & flag & info [ "cors" ] ~doc)
 
 let store =
-  let aux () root branch = v ~branch root in
-  Term.(const aux $ setup_log $ root $ branch)
+  let aux () root branch author = v ?author ~branch root in
+  Term.(const aux $ setup_log $ root $ branch $ author)
 
 let buf_size = 4096
 
@@ -253,7 +252,7 @@ let snapshot =
   Cmd.v info term
 
 let restore =
-  let cmd store commit =
+  let cmd store commit path =
     run
       (let* t = store in
        let hash = Irmin.Type.of_string Store.Hash.t commit in
@@ -267,11 +266,22 @@ let restore =
            | None ->
                Printf.fprintf stderr "Invalid commit\n";
                Lwt.return_unit
-           | Some commit -> restore t commit))
+           | Some commit -> restore ?path t commit))
   in
   let doc = "restore to a previous commit" in
   let info = Cmd.info "restore" ~doc in
-  let term = Term.(const cmd $ store $ hash 0) in
+  let term = Term.(const cmd $ store $ hash 0 $ path_opt 1) in
+  Cmd.v info term
+
+let rollback =
+  let cmd store path =
+    run
+      (let* t = store in
+       rollback ?path t ())
+  in
+  let doc = "rollback to the last commit" in
+  let info = Cmd.info "rollback" ~doc in
+  let term = Term.(const cmd $ store $ path_opt 0) in
   Cmd.v info term
 
 let contains =
@@ -363,6 +373,29 @@ let watch =
   let term = Term.(const cmd $ store $ command) in
   Cmd.v info term
 
+let audit =
+  let cmd store path =
+    run
+      (let* t = store in
+       let* lm = Store.last_modified (Wasmstore.store t) path in
+       let* () =
+         Lwt_list.iter_s
+           (fun commit ->
+             let info = Store.Commit.info commit in
+             let hash = Store.Commit.hash commit in
+             Lwt_io.printlf "%s\t%s\t%s"
+               (convert_date @@ Store.Info.date info)
+               (Store.Info.author info)
+               (Irmin.Type.to_string Hash.t hash))
+           lm
+       in
+       Lwt.return_unit)
+  in
+  let doc = "list commits that modified a specific path" in
+  let info = Cmd.info "audit" ~doc in
+  let term = Term.(const cmd $ store $ path 0) in
+  Cmd.v info term
+
 let commands =
   Cmd.group (Cmd.info "wasmstore")
     [
@@ -377,8 +410,11 @@ let commands =
       branch;
       snapshot;
       restore;
+      rollback;
       hash;
       watch;
+      audit;
+      Log.log store;
     ]
 
 let () = exit (Cmd.eval commands)
