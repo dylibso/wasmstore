@@ -1,6 +1,7 @@
 name: 'OCaml tests'
 
 on:
+  workflow_dispatch:
   pull_request:
     branches:
       - main
@@ -36,7 +37,7 @@ jobs:
         name: 'OCaml/Dune cache'
         uses: actions/cache@v3
         with:
-          key: wasmstore-dune-${{ matrix.ocaml-compiler }}-${{ matrix.os }}-${{ hashFiles('src/**') }}
+          key: wasmstore-dune-${{ matrix.ocaml-compiler }}-${{ matrix.os }}-${{ hashFiles('src/**') }}-${{ hashFiles('dune-project') }}
           path: _build
       - name: 'Use OCaml ${{ matrix.ocaml-compiler }}'
         uses: avsm/setup-ocaml@v2
@@ -45,6 +46,16 @@ jobs:
       - run: opam install . --deps-only -y
       - name: 'Run OCaml tests'
         run: opam exec -- dune runtest
+      - name: Generate executable
+        run: |
+          opam exec -- dune build
+          mv _build/default/install/bin/wasmstore ./wasmstore
+      - name: Save wasmstore executable
+        uses: actions/upload-artifact@v3
+        with:
+          name: wasmstore-${{ matrix.os }}
+          path: |
+            ./wasmstore
     strategy:
       fail-fast: true
       matrix:
