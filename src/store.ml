@@ -67,11 +67,12 @@ let rollback t ?(path = []) () : unit Lwt.t =
   let* lm = Store.last_modified ~n:2 t.db path in
   match lm with
   | [ _; commit ] -> restore t ~path commit
-  | _ ->
+  | [] | [ _ ] ->
       let info = info t "Rollback %a" Irmin.Type.(pp Store.Path.t) path in
       Error.mk @@ fun () ->
       Store.with_tree_exn ~info t.db path (fun _ ->
           Lwt.return_some @@ Store.Tree.empty ())
+  | _ -> assert false
 
 let path_of_hash hash =
   let hash' = Irmin.Type.to_string Store.Hash.t hash in
