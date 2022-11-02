@@ -15,13 +15,12 @@ def normalize_path(path):
 
 
 class Client:
-    def __init__(
-        self, 
-        url="http://127.0.0.1:6384", 
-        version="v1", 
-        auth=None,
-        branch=None
-    ):
+
+    def __init__(self,
+                 url="http://127.0.0.1:6384",
+                 version="v1",
+                 auth=None,
+                 branch=None):
         self.url = url + "/api/" + version
         self.auth = auth
         self.branch = branch
@@ -49,6 +48,8 @@ class Client:
     def hash(self, path):
         path = normalize_path(path)
         res = self.request("GET", "/hash/" + path)
+        if not res.ok:
+            return None
         return res.text
 
     def remove(self, path):
@@ -58,6 +59,8 @@ class Client:
 
     def snapshot(self):
         res = self.request("GET", "/snapshot")
+        if not res.ok:
+            return None
         return res.text
 
     def restore(self, hash, path=None):
@@ -67,12 +70,16 @@ class Client:
             url += normalize_path(path)
         res = self.request("POST", url)
         return res.ok
-        
-    def rollback(self, path):
-        res = self.request("POST", "/rollback/" + normalize_path(path))
+
+    def rollback(self, path=None):
+        url = "/rollback"
+        if path is not None:
+            url += "/"
+            url += normalize_path(path)
+        res = self.request("POST", url)
         return res.ok
-        
-    def versions(self):
+
+    def versions(self, path):
         res = self.request("GET", "/versions/" + normalize_path(path))
         return res.json()
 
