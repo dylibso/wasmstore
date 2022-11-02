@@ -14,6 +14,15 @@ pub struct Client {
     branch: Option<String>,
 }
 
+#[derive(serde::Deserialize)]
+pub struct CommitInfo {
+    pub hash: Commit,
+    pub parents: Option<Vec<Commit>>,
+    pub date: i64,
+    pub author: String,
+    pub message: String,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Version {
     V1,
@@ -268,6 +277,44 @@ impl Client {
         }
         Ok(())
     }
+
+    pub async fn contains(&self, path: impl Into<Path>) -> Result<bool, Error> {
+        let res = self
+            .request(
+                reqwest::Method::HEAD,
+                self.endpoint(&format!("/module/{}", path.into().to_string())),
+                None,
+            )
+            .await?;
+        Ok(res.status().is_success())
+    }
+
+    pub async fn set(&self, path: impl Into<Path>, hash: &Hash) -> Result<Hash, Error> {
+        let path = path.into();
+        let p = format!("/hash/{}/{}", hash.0, path.to_string());
+        let res = self
+            .request(reqwest::Method::POST, self.endpoint(&p), None)
+            .await?;
+
+        if !res.status().is_success() {
+            return Err(Error::msg(res.text().await?));
+        }
+
+        let b = res.text().await?;
+        Ok(Hash(b))
+    }
+
+    pub async fn commit_info(&self, commit: &Commit) -> Result<CommitInfo, Error> {
+        let p = format!("/commit/{}", commit.0);
+        let res = self
+            .request(reqwest::Method::GET, self.endpoint(&p), None)
+            .await?;
+        if !res.status().is_success() {
+            return Err(Error::msg(res.text().await?));
+        }
+        let res: CommitInfo = res.json().await?;
+        Ok(res)
+    }
 }
 
 #[cfg(test)]
@@ -284,6 +331,9 @@ mod tests {
 
         let data = client.find(hash.unwrap()).await.unwrap();
         let data1 = client.find("test.wasm").await.unwrap();
+
+        let hash = client.snapshot().await.unwrap();
+        client.commit_info(&hash).await.unwrap();
 
         assert!(data.is_some());
         assert!(data1.is_some());

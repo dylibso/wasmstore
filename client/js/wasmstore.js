@@ -1,13 +1,13 @@
 (async function() {
   try {
     var node_fetch = await import('node-fetch');
-    fetch = node_fetch.default;
+    global.fetch = node_fetch.default;
   } catch (_) {
 
   }
 })().catch(_ => { return });
 
-async function request(method, url, body = null, auth = null, branch = null) {
+export async function request(method, url, body = null, auth = null, branch = null) {
   let opts = {
     method,
     mode: 'cors',
@@ -44,7 +44,7 @@ function pathString(path) {
   return normalizePath(path);
 }
 
-class Client {
+export class Client {
   constructor(url = "http://127.0.0.1:6384", branch = null, auth = null, version = "v1") {
     this.url = url + "/api/" + version;
     this.auth = auth;
@@ -122,6 +122,21 @@ class Client {
     let res = await this.request("DELETE", "/branch/" + name);
     return res.ok;
   }
+  
+  async set(path, hash) {
+    let res = await this.request("POST", "/hash/" + hash + "/" + pathString(path));
+    return res.ok;
+  }
+  
+  async contains(path) {
+    let res = await this.request("HEAD", "/module/" + pathString(path));
+    return res.ok;
+  }
+  
+  async commitInfo(hash) {
+    let res = await this.request("GET", "/commit/" + hash);
+    return await res.json();
+  }
 
   async watch(callback) {
     let ws = new WebSocket(this.url.replace("http", "ws") + "/watch");
@@ -133,3 +148,4 @@ class Client {
     return ws;
   }
 }
+

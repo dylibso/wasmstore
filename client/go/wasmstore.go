@@ -10,6 +10,7 @@ import (
 )
 
 type Hash = string
+type CommitHash = string
 
 type Client struct {
 	URL    *url.URL
@@ -20,6 +21,14 @@ type Config struct {
 	Auth    string
 	Branch  string
 	Version string
+}
+
+type CommitInfo struct {
+	Hash    CommitHash   `json:"hash"`
+	Parents []CommitHash `json:"parents,omitempty"`
+	Date    int64        `json:"date"`
+	Author  string       `json:"author"`
+	Message string       `json:"message"`
 }
 
 func JoinPath(path []string) string {
@@ -98,6 +107,15 @@ func (c *Client) Add(wasm io.Reader, path ...string) (Hash, error) {
 	return string(res), nil
 }
 
+func (c *Client) Set(wasm io.Reader, commit CommitHash, path ...string) (bool, error) {
+	_, code, err := c.Request("POST", "/module/"+JoinPath(path), wasm)
+	if err != nil {
+		return false, err
+	}
+
+	return code == 200, nil
+}
+
 func (c *Client) Hash(path ...string) (Hash, error) {
 	res, _, err := c.Request("GET", "/hash/"+JoinPath(path), nil)
 	if err != nil {
@@ -116,7 +134,7 @@ func (c *Client) Remove(path ...string) (bool, error) {
 	return code == 200, nil
 }
 
-func (c *Client) Snapshot() (Hash, error) {
+func (c *Client) Snapshot() (CommitHash, error) {
 	res, _, err := c.Request("GET", "/snapshot", nil)
 	if err != nil {
 		return "", err
@@ -125,7 +143,7 @@ func (c *Client) Snapshot() (Hash, error) {
 	return string(res), nil
 }
 
-func (c *Client) Restore(hash Hash, path ...string) (bool, error) {
+func (c *Client) Restore(hash CommitHash, path ...string) (bool, error) {
 	_, code, err := c.Request("POST", "/restore/"+hash+"/"+JoinPath(path), nil)
 	if err != nil {
 		return false, err
@@ -219,6 +237,30 @@ func (c *Client) List(path ...string) (map[string]Hash, error) {
 	err = json.Unmarshal(res, &s)
 	if err != nil {
 		return nil, err
+	}
+
+	return s, nil
+}
+
+func (c *Client) Contains(path ...string) (bool, error) {
+	_, code, err := c.Request("HEAD", "/module/"+JoinPath(path), nil)
+	if err != nil {
+		return false, err
+	}
+
+	return code == 200, nil
+}
+
+func (c *Client) CommitInfo(hash CommitHash) (CommitInfo, error) {
+	res, _, err := c.Request("GET", "/commit/"+hash, nil)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	var s CommitInfo
+	err = json.Unmarshal(res, &s)
+	if err != nil {
+		return CommitInfo{}, err
 	}
 
 	return s, nil

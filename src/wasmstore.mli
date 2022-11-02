@@ -118,18 +118,20 @@ val watch : t -> (Yojson.Safe.t -> unit Lwt.t) -> Store.watch Lwt.t
 val unwatch : Store.watch -> unit Lwt.t
 (** [unwatch w] unregisters and disables the watch [w] *)
 
-val versions : t -> string list -> (hash * [`Commit of hash]) list Lwt.t
+val versions : t -> string list -> (hash * [ `Commit of hash ]) list Lwt.t
 
-module Commit_info: sig
-    type t = {
-      hash: Hash.t;
-      parents: Hash.t list;
-      info: Store.Info.t;
-    } [@@deriving irmin]
+module Commit_info : sig
+  type t = {
+    hash : Hash.t;
+    parents : Hash.t list;
+    author : string;
+    date : int64;
+    message : string;
+  }
+  [@@deriving irmin]
 end
 
 val commit_info : t -> hash -> Commit_info.t option Lwt.t
-
 
 module Branch : sig
   val switch : t -> string -> unit Lwt.t

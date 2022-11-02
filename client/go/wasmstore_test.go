@@ -48,4 +48,14 @@ func TestClient(t *testing.T) {
 		}
 		break
 	}
+
+	hash, err := client.Snapshot()
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = client.CommitInfo(hash)
+	if err != nil {
+		t.Error(err)
+	}
 }

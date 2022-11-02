@@ -34,20 +34,24 @@ class Client:
         return request(method, self.url + route, headers=headers, data=body)
 
     def find(self, path):
-        path = normalize_path(path)
-        res = self.request("GET", "/module/" + path)
+        res = self.request("GET", "/module/" + normalize_path(path))
         if res.status_code == 404:
             return None
         return res.content
 
     def add(self, path, data):
-        path = normalize_path(path)
-        res = self.request("POST", "/module/" + path, body=data)
+        res = self.request("POST",
+                           "/module/" + normalize_path(path),
+                           body=data)
+        return res.text
+
+    def set(self, path, hash):
+        res = self.request("POST",
+                           "/hash/" + hash + "/" + normalize_pathr(path))
         return res.text
 
     def hash(self, path):
-        path = normalize_path(path)
-        res = self.request("GET", "/hash/" + path)
+        res = self.request("GET", "/hash/" + normalize_path(path))
         if not res.ok:
             return None
         return res.text
@@ -109,3 +113,11 @@ class Client:
     def merge(self, branch):
         res = self.request("POST", "/merge/" + branch)
         return res.ok
+
+    def contains(self, path):
+        res = self.request("HEAD", "/module/" + normalize_path(path))
+        return res.ok
+
+    def commit_info(self, hash):
+        res = self.request("GET", "/commit/" + hash)
+        return res.json()

@@ -267,7 +267,13 @@ let versions t path =
     lm
 
 module Commit_info = struct
-  type t = { hash : Hash.t; parents : Hash.t list; info : Store.Info.t }
+  type t = {
+    hash : Hash.t;
+    parents : Hash.t list;
+    author : string;
+    date : int64;
+    message : string;
+  }
   [@@deriving irmin]
 end
 
@@ -281,5 +287,13 @@ let commit_info t hash =
   | Some commit ->
       let parents = Store.Commit.parents commit in
       let info = Store.Commit.info commit in
-      Lwt.return_some Commit_info.{ hash; parents; info }
+      Lwt.return_some
+        Commit_info.
+          {
+            hash;
+            parents;
+            author = Store.Info.author info;
+            date = Store.Info.date info;
+            message = Store.Info.message info;
+          }
   | None -> Lwt.return_none
