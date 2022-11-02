@@ -117,7 +117,7 @@ let store =
   let aux () root branch author = v ?author ~branch root in
   Term.(const aux $ setup_log $ root $ branch $ author)
 
-let buf_size = 4096 * 2
+let buf_size = 4096
 
 let rec read_file buf ic f =
   let* n = Lwt_io.read_into ic buf 0 buf_size in
@@ -161,7 +161,7 @@ let add =
            | exn -> raise exn))
   in
 
-  let doc = "Add a WASM module" in
+  let doc = "add a WASM module" in
   let info = Cmd.info "add" ~doc in
   let term = Term.(const cmd $ store $ file 0 $ path_opt 1) in
   Cmd.v info term
@@ -173,7 +173,7 @@ let find =
        let+ value = find t path in
        match value with None -> exit 1 | Some value -> print_string value)
   in
-  let doc = "Find a WASM module by hash or name" in
+  let doc = "find a WASM module by hash or name" in
   let info = Cmd.info "find" ~doc in
   let term = Term.(const cmd $ store $ path 0) in
   Cmd.v info term
@@ -184,7 +184,7 @@ let remove =
       (let* t = store in
        Wasmstore.remove t path)
   in
-  let doc = "Remove WASM module from store by hash" in
+  let doc = "remove WASM module from store by hash" in
   let info = Cmd.info "remove" ~doc in
   let term = Term.(const cmd $ store $ path 0) in
   Cmd.v info term
@@ -198,11 +198,11 @@ let merge =
        | Ok () -> ()
        | Error e ->
            let stderr = Format.formatter_of_out_channel stderr in
-           Format.fprintf stderr "ERROR: %a"
+           Format.fprintf stderr "ERROR %a"
              (Irmin.Type.pp Irmin.Merge.conflict_t)
              e)
   in
-  let doc = "Merge branch into main" in
+  let doc = "merge branch into main" in
   let info = Cmd.info "merge" ~doc in
   let term = Term.(const cmd $ store $ branch_from 0) in
   Cmd.v info term
@@ -214,7 +214,7 @@ let gc =
        let+ res = gc t in
        Printf.printf "%d\n" res)
   in
-  let doc = "Cleanup modules that are no longer referenced" in
+  let doc = "cleanup modules that are no longer referenced" in
   let info = Cmd.info "gc" ~doc in
   let term = Term.(const cmd $ store) in
   Cmd.v info term
@@ -233,7 +233,7 @@ let list =
              path)
          items)
   in
-  let doc = "List WASM modules" in
+  let doc = "list WASM modules" in
   let info = Cmd.info "list" ~doc in
   let term = Term.(const cmd $ store $ path 0) in
   Cmd.v info term
@@ -246,7 +246,7 @@ let snapshot =
        print_endline
          (Irmin.Type.to_string Store.Hash.t (Store.Commit.hash head)))
   in
-  let doc = "Get current head commit hash" in
+  let doc = "get current head commit hash" in
   let info = Cmd.info "snapshot" ~doc in
   let term = Term.(const cmd $ store) in
   Cmd.v info term
@@ -258,13 +258,13 @@ let restore =
        let hash = Irmin.Type.of_string Store.Hash.t commit in
        match hash with
        | Error _ ->
-           Printf.fprintf stderr "Invalid hash\n";
+           Printf.fprintf stderr "ERROR invalid hash\n";
            Lwt.return_unit
        | Ok hash -> (
            let* commit = Store.Commit.of_hash (repo t) hash in
            match commit with
            | None ->
-               Printf.fprintf stderr "Invalid commit\n";
+               Printf.fprintf stderr "ERROR invalid commit\n";
                Lwt.return_unit
            | Some commit -> restore ?path t commit))
   in
@@ -291,9 +291,46 @@ let contains =
        let+ value = contains t path in
        Format.printf "%b\n" value)
   in
-  let doc = "Check if a WASM module exists by hash or name" in
+  let doc = "check if a WASM module exists by hash or name" in
   let info = Cmd.info "contains" ~doc in
   let term = Term.(const cmd $ store $ path 0) in
+  Cmd.v info term
+
+let set =
+  let cmd store hash path =
+    run
+      (let* t = store in
+       let hash' = Irmin.Type.of_string Store.Hash.t hash in
+       match hash' with
+       | Error _ -> Lwt_io.eprintlf "invalid hash: %s" hash
+       | Ok hash -> Wasmstore.set t path hash)
+  in
+  let doc = "set a path to point to an existing hash" in
+  let info = Cmd.info "set" ~doc in
+  let term = Term.(const cmd $ store $ hash 0 $ path 1) in
+  Cmd.v info term
+
+let commit =
+  let cmd store hash =
+    run
+      (let* t = store in
+       let hash' = Irmin.Type.of_string Hash.t hash in
+       let fail body = Lwt_io.fprintlf Lwt_io.stderr "ERROR %s" body in
+       match hash' with
+       | Error _ -> fail "invalid hash"
+       | Ok hash -> (
+           let* info = commit_info t hash in
+           match info with
+           | Some info ->
+               let body =
+                 Irmin.Type.to_json_string ~minify:false Commit_info.t info
+               in
+               Lwt_io.printl body
+           | None -> fail "invalid commit"))
+  in
+  let doc = "get commit info" in
+  let info = Cmd.info "commit" ~doc in
+  let term = Term.(const cmd $ store $ hash 0) in
   Cmd.v info term
 
 let hash =
@@ -432,6 +469,8 @@ let commands =
       watch;
       audit;
       versions;
+      set;
+      commit;
       Log.log store;
     ]
 

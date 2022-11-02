@@ -70,7 +70,11 @@ val add : t -> string list -> string -> hash Lwt.t
 (** [add t path wasm_module] sets [path] to [wasm_module] after verifying the module. If [path] is a hash
     then it will be converted to "[$HASH].wasm". *)
 
+val set : t -> string list -> hash -> unit Lwt.t
+(** [set t path hash] sets [path] to an existing [hash] *)
+
 val import : t -> string list -> string Lwt_stream.t -> hash Lwt.t
+(** [import t path stream] adds a WebAssembly module from the given stream *)
 
 val hash : t -> string list -> hash option Lwt.t
 (** [hash t path] returns the hash associated the the value stored at [path],
@@ -115,6 +119,17 @@ val unwatch : Store.watch -> unit Lwt.t
 (** [unwatch w] unregisters and disables the watch [w] *)
 
 val versions : t -> string list -> (hash * [`Commit of hash]) list Lwt.t
+
+module Commit_info: sig
+    type t = {
+      hash: Hash.t;
+      parents: Hash.t list;
+      info: Store.Info.t;
+    } [@@deriving irmin]
+end
+
+val commit_info : t -> hash -> Commit_info.t option Lwt.t
+
 
 module Branch : sig
   val switch : t -> string -> unit Lwt.t

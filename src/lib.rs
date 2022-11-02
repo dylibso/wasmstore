@@ -1,6 +1,6 @@
 use std::io::Read;
 
-const BUF_SIZE: usize = 4096 * 2;
+const BUF_SIZE: usize = 4096;
 
 #[ocaml::func]
 #[ocaml::sig("string -> (unit, string) result")]

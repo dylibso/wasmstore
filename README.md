@@ -35,6 +35,8 @@ branch.
   - Get a single module by hash or path, the module hash will also be stored in
     the `Wasmstore-Hash` header in the response.
   - Example: `curl http://127.0.0.1:6384/api/v1/module/mymodule.wasm`
+- `HEAD /api/v1/module/*`
+  - Returns `200` status code if the path exists, otherwise `404`
 - `POST /api/v1/module/*`
   - Add a new module, the request body should contain the WASM module
   - Example: `curl --data-binary @mymodule.wasm http://127.0.0.1:6384/api/v1/module/mymodule.wasm`
@@ -42,6 +44,8 @@ branch.
   - Delete a module by hash or path
 - `GET /api/v1/hash/*`
   - Get the hash of the module stored at a specific path
+- `POST /api/v1/hash/:hash/*`
+  - Set the path to point to the provided hash (the hash should already exist in the store)
 - `PUT /api/v1/branch/:branch`
   - Switch the default branch
 - `POST /api/v1/branch/:branch`
@@ -62,6 +66,8 @@ branch.
   - Revert to the last commit
 - `GET /api/v1/snapshot`
   - Returns the latest commit hash
+- `GET /api/v1/commit`
+  - Returns a JSON object with information about a commit
 - `GET /api/v1/versions/*`
   - Returns an array of pairs (module hash, commit hash) of all previous modules stored at the provided path
 - `GET /api/v1/watch`

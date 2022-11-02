@@ -1,18 +1,18 @@
   $ export WASMSTORE_ROOT=./test/tmp
 Add wasm module `a`
   $ cat a.wasm | wasmstore add - a.wasm 
-  314418a1e31ba09cbf48bf4663938bcb87d6a58087652cc53021bc6a4997c446
+  b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31
 
 Rollback `a`
   $ wasmstore rollback a.wasm
   $ wasmstore contains a.wasm
   false
   $ wasmstore add a.wasm
-  314418a1e31ba09cbf48bf4663938bcb87d6a58087652cc53021bc6a4997c446
+  b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31
 
 Add wasm module `b`
   $ wasmstore add b.wasm
-  de332fe6a29c04d0de4b135f4d251780cdf5f3476d44c17cac493ea3df2e4685
+  d926c50304238d423d63f52f5f460b1a7170fe870e10f031b9cbd74b29bc06e5
 
 Make sure the store contains the hash and path
   $ wasmstore contains 0312a97e84150ab77401b72f951f8af63a05062781ce06c905d5626c615d1bc2
@@ -39,17 +39,17 @@ Restore 1
 
 Versions
   $ wasmstore versions b.wasm | awk '{ print $1 }'
-  de332fe6a29c04d0de4b135f4d251780cdf5f3476d44c17cac493ea3df2e4685
+  d926c50304238d423d63f52f5f460b1a7170fe870e10f031b9cbd74b29bc06e5
 
 Restore 2
   $ wasmstore restore $SNAPSHOT2
 
 Versions
   $ wasmstore add a.wasm b.wasm
-  314418a1e31ba09cbf48bf4663938bcb87d6a58087652cc53021bc6a4997c446
+  b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31
   $ wasmstore versions b.wasm | awk '{ print $1 }'
-  de332fe6a29c04d0de4b135f4d251780cdf5f3476d44c17cac493ea3df2e4685
-  314418a1e31ba09cbf48bf4663938bcb87d6a58087652cc53021bc6a4997c446
+  d926c50304238d423d63f52f5f460b1a7170fe870e10f031b9cbd74b29bc06e5
+  b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31
 
 Restore 2
   $ wasmstore restore $SNAPSHOT2
@@ -58,7 +58,7 @@ Store should no longer contain `a.wasm`
   $ wasmstore contains a.wasm
   false
   $ wasmstore list
-  de332fe6a29c04d0de4b135f4d251780cdf5f3476d44c17cac493ea3df2e4685	/b.wasm
+  d926c50304238d423d63f52f5f460b1a7170fe870e10f031b9cbd74b29bc06e5	/b.wasm
 
 Run garbage collector
   $ wasmstore gc
@@ -77,7 +77,17 @@ Invalid WASM module
 
 Versions
   $ wasmstore add a.wasm b.wasm
-  314418a1e31ba09cbf48bf4663938bcb87d6a58087652cc53021bc6a4997c446
+  b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31
   $ wasmstore versions b.wasm | awk '{ print $1 }'
-  de332fe6a29c04d0de4b135f4d251780cdf5f3476d44c17cac493ea3df2e4685
-  314418a1e31ba09cbf48bf4663938bcb87d6a58087652cc53021bc6a4997c446
+  d926c50304238d423d63f52f5f460b1a7170fe870e10f031b9cbd74b29bc06e5
+  b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31
+
+Set
+  $ wasmstore set d926c50304238d423d63f52f5f460b1a7170fe870e10f031b9cbd74b29bc06e5 c.wasm
+  $ wasmstore hash c.wasm
+  d926c50304238d423d63f52f5f460b1a7170fe870e10f031b9cbd74b29bc06e5
+
+  $ wasmstore set d926c50304238d423d63f52f5f460b1a7170fe870e10f031b9cbd74b29bc06e5 b.wasm
+  $ wasmstore versions b.wasm | awk '{ print $1 }'
+  d926c50304238d423d63f52f5f460b1a7170fe870e10f031b9cbd74b29bc06e5
+  b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31

@@ -91,7 +91,7 @@ let get_hash_and_filename t path =
 let set_path t path hash =
   let* tree = Store.Tree.of_hash (repo t) (`Contents (hash, ())) in
   match tree with
-  | None -> failwith "hash mismatch"
+  | None -> Error.throw (`Msg "hash mismatch")
   | Some tree ->
       let info = info t "Import %a" (Irmin.Type.pp Store.Path.t) path in
       Store.set_tree_exn t.db path tree ~info
@@ -154,6 +154,26 @@ let add t path wasm =
       path
   in
   Store.Contents.hash wasm
+
+let set t path hash =
+  let* tree = Store.Tree.of_hash (repo t) (`Contents (hash, ())) in
+  let f path =
+    match tree with
+    | None -> Error.throw (`Msg "hash mismatch")
+    | Some tree ->
+        let info =
+          info t "Set %a %a"
+            (Irmin.Type.pp Store.Path.t)
+            path
+            (Irmin.Type.pp Store.Hash.t)
+            hash
+        in
+        Store.set_tree_exn t.db path tree ~info
+  in
+  hash_or_path
+    ~hash:(fun _ ->
+      Error.throw (`Msg "A hash path should not be used with `set` command"))
+    ~path:f path
 
 let find_hash { db; _ } hash = Store.Contents.of_hash (Store.repo db) hash
 let find t path = hash_or_path ~hash:(find_hash t) ~path:(Store.find t.db) path
@@ -245,3 +265,21 @@ let versions t path =
             let () = hashes := Hash_set.add h !hashes in
             Lwt.return_some (h, `Commit (Store.Commit.hash commit)))
     lm
+
+module Commit_info = struct
+  type t = { hash : Hash.t; parents : Hash.t list; info : Store.Info.t }
+  [@@deriving irmin]
+end
+
+let commit_info t hash =
+  let* commit =
+    Lwt.catch
+      (fun () -> Store.Commit.of_hash (repo t) hash)
+      (function Assert_failure _ -> Lwt.return_none | exn -> raise exn)
+  in
+  match commit with
+  | Some commit ->
+      let parents = Store.Commit.parents commit in
+      let info = Store.Commit.info commit in
+      Lwt.return_some Commit_info.{ hash; parents; info }
+  | None -> Lwt.return_none

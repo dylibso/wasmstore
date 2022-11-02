@@ -49,6 +49,25 @@ let add_module t ~headers body path =
           @@ Server.respond_string ~headers ~status:`Bad_request ~body:msg ()
       | exn -> raise exn)
 
+let set_hash t ~headers hash path =
+  let hash = Irmin.Type.of_string Store.Hash.t hash in
+  match hash with
+  | Ok hash ->
+      Lwt.catch
+        (fun () ->
+          let* () = set t path hash in
+          response @@ Server.respond_string ~headers ~status:`OK ~body:"" ())
+        (function
+          | Validation_error msg ->
+              response
+              @@ Server.respond_string ~headers ~status:`Bad_request ~body:msg
+                   ()
+          | exn -> raise exn)
+  | Error _ ->
+      response
+      @@ Server.respond_string ~headers ~status:`Bad_request
+           ~body:"invalid hash" ()
+
 let find_module t ~headers path =
   let* filename = get_hash_and_filename t path in
   match filename with
@@ -124,15 +143,39 @@ let require_auth t ~body ~auth ~headers req ~v1 =
 
 let callback t ~headers ~auth _conn req body =
   require_auth t ~auth ~headers ~body req ~v1:(fun t -> function
+    | `GET, `V1 ("commit" :: [ hash ]) -> (
+        let hash' = Irmin.Type.of_string Hash.t hash in
+        let fail body status =
+          response @@ Server.respond_string ~headers ~status ~body ()
+        in
+        match hash' with
+        | Error _ -> fail "invalid hash" `Bad_request
+        | Ok hash -> (
+            let* info = commit_info t hash in
+            match info with
+            | Some info ->
+                let body = Irmin.Type.to_json_string Commit_info.t info in
+                response @@ Server.respond_string ~headers ~status:`OK ~body ()
+            | None -> fail "invalid commit" `Not_found))
     | `GET, `V1 ("modules" :: path) ->
         let* () = Body.drain_body body in
         list_modules t ~headers path
     | `GET, `V1 ("module" :: path) ->
         let* () = Body.drain_body body in
         find_module t ~headers path
+    | `HEAD, `V1 ("module" :: path) ->
+        let* () = Body.drain_body body in
+        let* exists = contains t path in
+        response
+        @@ Server.respond_string ~headers
+             ~status:(if exists then `OK else `Not_found)
+             ~body:"" ()
     | `GET, `V1 ("hash" :: path) ->
         let* () = Body.drain_body body in
         find_hash t ~headers path
+    | `POST, `V1 ("hash" :: hash :: path) ->
+        let* () = Body.drain_body body in
+        set_hash t ~headers hash path
     | `POST, `V1 ("module" :: path) -> add_module t ~headers body path
     | `DELETE, `V1 ("module" :: path) ->
         let* () = Body.drain_body body in
