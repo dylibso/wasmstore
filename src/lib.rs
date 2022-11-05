@@ -1,32 +1,72 @@
+use std::io::Read;
+use wasmparser::{Chunk, Parser, Validator};
+
+fn err<T: ToString>(x: T) -> String {
+    x.to_string()
+}
+
+fn validate(mut reader: impl Read) -> Result<(), String> {
+    let mut buf = Vec::new();
+    let mut parser = Parser::new(0);
+    let mut eof = false;
+    let mut stack = Vec::new();
+    let mut validator = Validator::new();
+
+    loop {
+        let (payload, consumed) = match parser.parse(&buf, eof).map_err(err)? {
+            Chunk::NeedMoreData(hint) => {
+                assert!(!eof); // otherwise an error would be returned
+
+                // Use the hint to preallocate more space, then read
+                // some more data into our buffer.
+                //
+                // Note that the buffer management here is not ideal,
+                // but it's compact enough to fit in an example!
+                let len = buf.len();
+                buf.extend((0..hint).map(|_| 0u8));
+                let n = reader.read(&mut buf[len..]).map_err(err)?;
+                buf.truncate(len + n);
+                eof = n == 0;
+                continue;
+            }
+
+            Chunk::Parsed { consumed, payload } => (payload, consumed),
+        };
+
+        match validator.payload(&payload).map_err(err)? {
+            wasmparser::ValidPayload::End(_) => {
+                if let Some(parent_parser) = stack.pop() {
+                    parser = parent_parser;
+                } else {
+                    break;
+                }
+            }
+            _ => (),
+        }
+
+        // once we're done processing the payload we can forget the
+        // original.
+        buf.drain(..consumed);
+    }
+
+    Ok(())
+}
+
 #[ocaml::func]
 #[ocaml::sig("string -> (unit, string) result")]
 pub unsafe fn wasm_verify_file(filename: &str) -> Result<(), String> {
-    let data = match std::fs::read(filename) {
+    let file = match std::fs::File::open(filename) {
         Ok(f) => f,
         Err(_) => return Err(format!("unable to open file {}", filename)),
     };
 
-    let mut validator = wasmparser::Validator::new();
-
-    match validator.validate_all(&data) {
-        Ok(_) => Ok(()),
-        Err(e) => return Err(format!("{} (at offset 0x{:x})", e.message(), e.offset())),
-    }
+    validate(file)
 }
 
 #[ocaml::func]
 #[ocaml::sig("string -> (unit, string) result")]
 pub unsafe fn wasm_verify_string(data: &[u8]) -> Result<(), String> {
-    let parser = wasmparser::Parser::new(0);
     let mut validator = wasmparser::Validator::new();
-
-    for payload in parser.parse_all(data) {
-        let payload = payload.map_err(|x| x.to_string())?;
-        match validator.payload(&payload).map_err(|e| e.to_string())? {
-            wasmparser::ValidPayload::Ok | wasmparser::ValidPayload::End(_) => return Ok(()),
-            _ => (),
-        }
-    }
-
-    return Err("unable to detect end of module".to_string());
+    validator.validate_all(data).map_err(err)?;
+    Ok(())
 }
