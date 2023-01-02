@@ -1,4 +1,9 @@
   $ export WASMSTORE_ROOT=./test/tmp
+
+Parsing fail
+  $ head -c 12 a.wasm | wasmstore add - a.wasm 
+  ERROR invalid module: unexpected end-of-file (at offset 0xb)
+
 Add wasm module `a`
   $ cat a.wasm | wasmstore add - a.wasm 
   b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31
