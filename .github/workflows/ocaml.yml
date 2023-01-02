@@ -40,7 +40,7 @@ jobs:
           key: wasmstore-dune-${{ matrix.ocaml-compiler }}-${{ matrix.os }}-${{ hashFiles('src/**') }}-${{ hashFiles('dune-project') }}
           path: _build
       - name: 'Use OCaml ${{ matrix.ocaml-compiler }}'
-        uses: avsm/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: '${{ matrix.ocaml-compiler }}'
       - run: opam install . --deps-only -y
@@ -60,6 +60,7 @@ jobs:
       matrix:
         ocaml-compiler:
           - 4.14.0
+          - 5.0.0
         os:
           #- macos-latest
           - ubuntu-latest
