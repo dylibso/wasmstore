@@ -16,6 +16,7 @@
  (preprocess
   (pps ppx_irmin.internal))
  (foreign_archives wasm)
+ (foreign_stubs (language c) (names wasm_bindings))
  (c_library_flags
   (-lpthread -lc -lm)))
 

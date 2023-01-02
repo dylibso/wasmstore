@@ -7,8 +7,9 @@ edition = "2021"
 crate-type = ["staticlib"] # You can also use cdylib, depending on your project
 
 [dependencies]
-ocaml = "1.0.0-beta.4"
+ocaml-sys = "0.23"
 wasmparser = "0.93" 
 
 [build-dependencies]
-ocaml-build = "1.0.0-beta.4"
+cc = "1"
+

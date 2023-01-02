@@ -52,21 +52,33 @@ fn validate(mut reader: impl Read) -> Result<(), String> {
     Ok(())
 }
 
-#[ocaml::func]
-#[ocaml::sig("string -> (unit, string) result")]
-pub unsafe fn wasm_verify_file(filename: &str) -> Result<(), String> {
-    let file = match std::fs::File::open(filename) {
-        Ok(f) => f,
-        Err(_) => return Err(format!("unable to open file {}", filename)),
-    };
-
-    validate(file)
+#[no_mangle]
+unsafe extern "C" fn wasmstore_error_free(err: *mut std::ffi::c_char) {
+    drop(std::ffi::CString::from_raw(err))
 }
 
-#[ocaml::func]
-#[ocaml::sig("string -> (unit, string) result")]
-pub unsafe fn wasm_verify_string(data: &[u8]) -> Result<(), String> {
-    let mut validator = wasmparser::Validator::new();
-    validator.validate_all(data).map_err(err)?;
-    Ok(())
+#[no_mangle]
+unsafe extern "C" fn wasmstore_verify_string(s: *const u8, len: usize) -> *mut std::ffi::c_char {
+    let buf = std::slice::from_raw_parts(s, len);
+    match validate(buf) {
+        Ok(()) => std::ptr::null_mut(),
+        Err(s) => std::ffi::CString::new(s).unwrap_or_default().into_raw(),
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn wasmstore_verify_file(s: *const std::ffi::c_char) -> *mut std::ffi::c_char {
+    let filename = std::ffi::CStr::from_ptr(s).to_string_lossy();
+    let file = match std::fs::File::open(filename.as_ref()) {
+        Ok(f) => f,
+        Err(e) => {
+            return std::ffi::CString::new(e.to_string())
+                .unwrap_or_default()
+                .into_raw()
+        }
+    };
+    match validate(file) {
+        Ok(()) => std::ptr::null_mut(),
+        Err(s) => std::ffi::CString::new(s).unwrap_or_default().into_raw(),
+    }
 }
