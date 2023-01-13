@@ -1,3 +1,3 @@
 pub fn main() -> std::io::Result<()> {
-    Ok(())
+    ocaml_build::Sigs::new("src/rust.ml").generate()
 }

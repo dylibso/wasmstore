@@ -7,9 +7,10 @@ edition = "2021"
 crate-type = ["staticlib"] # You can also use cdylib, depending on your project
 
 [dependencies]
-ocaml-sys = "0.23"
-wasmparser = "0.93" 
+ocaml = {git = "https://github.com/zshipko/ocaml-rs", branch="ocaml5"}
+wasmparser = "0.96" 
 
 [build-dependencies]
 cc = "1"
+ocaml-build = {git = "https://github.com/zshipko/ocaml-rs", branch="ocaml5"}
 
