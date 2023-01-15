@@ -23,6 +23,7 @@ depends: [
   "websocket"
   "cmdliner"
   "yojson"
+  "conf-rust-2021"
   "odoc" {with-doc}
 ]
 build: [
