@@ -6,7 +6,7 @@ description:
 maintainer: ["Zach Shipko <zach@dylib.so>"]
 authors: ["Dylibso Inc."]
 license: "BSD-3-clause"
-tags: ["topics" "wasm" "irmin"]
+tags: ["topics" "wasm" "database" "irmin"]
 homepage: "https://github.com/dylibso/wasmstore"
 doc: "https://github.com/dylibso/wasmstore"
 bug-reports: "https://github.com/dylibso/wasmstore/issues"
