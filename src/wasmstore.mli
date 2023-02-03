@@ -57,8 +57,8 @@ val restore : t -> ?path:string list -> Store.commit -> unit Lwt.t
 (** [restore t commit] sets the head commit, if [path] is provided then only the specfied path
     will be reverted *)
 
-val rollback : t -> ?path:string list -> unit -> unit Lwt.t
-(** [rollback t] sets the head commit to the last commit, if [path] is provided then only the specfied 
+val rollback : t -> ?path:string list -> int -> unit Lwt.t
+(** [rollback t n] sets the head commit to [n] commits in the past, if [path] is provided then only the specfied 
     path will be reverted *)
 
 val find : t -> string list -> string option Lwt.t

@@ -178,6 +178,22 @@ let find =
   let term = Term.(const cmd $ store $ path 0) in
   Cmd.v info term
 
+let filename =
+  let cmd store path =
+    run
+      (let* t = store in
+       let config = Store.Repo.config (repo t) in
+       let root = Irmin.Backend.Conf.find_root config |> Option.get in
+       let* opt = Wasmstore.get_hash_and_filename t path in
+       match opt with
+       | None -> exit 1
+       | Some (_, filename) -> Lwt_io.printl (Filename.concat root filename))
+  in
+  let doc = "get the path on disk by hash or name" in
+  let info = Cmd.info "filename" ~doc in
+  let term = Term.(const cmd $ store $ path 0) in
+  Cmd.v info term
+
 let remove =
   let cmd store path =
     run
@@ -277,7 +293,7 @@ let rollback =
   let cmd store path =
     run
       (let* t = store in
-       rollback ?path t ())
+       rollback ?path t 1)
   in
   let doc = "rollback to the last commit" in
   let info = Cmd.info "rollback" ~doc in
@@ -471,6 +487,7 @@ let commands =
       versions;
       set;
       commit;
+      filename;
       Log.log store;
     ]
 

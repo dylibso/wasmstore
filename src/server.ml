@@ -213,7 +213,7 @@ let callback t ~headers ~auth _conn req body =
                 response
                 @@ Server.respond_string ~headers ~status:`OK ~body:"" ()))
     | `POST, `V1 ("rollback" :: path) ->
-        let* () = rollback t ~path () in
+        let* () = rollback t ~path 1 in
         response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
     | `GET, `V1 [ "snapshot" ] ->
         let* commit = snapshot t in

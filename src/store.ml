@@ -56,23 +56,25 @@ let restore t ?path commit =
   | None | Some [] -> Error.mk @@ fun () -> Store.Head.set t.db commit
   | Some path ->
       let info = info t "Restore %a" (Irmin.Type.pp Store.Path.t) path in
+      let parents = Store.Commit.parents commit in
+      let* parents =
+        Lwt_list.filter_map_s (Store.Commit.of_key (Store.repo t.db)) parents
+      in
       let tree = Store.Commit.tree commit in
       Error.mk @@ fun () ->
-      Store.with_tree_exn ~info t.db path (fun _ ->
+      Store.with_tree_exn ~parents ~info t.db path (fun _ ->
           Store.Tree.find_tree tree path)
 
 let tree_opt_equal = Irmin.Type.(unstage (equal (option Store.Tree.t)))
 
-let rollback t ?(path = []) () : unit Lwt.t =
-  let* lm = Store.last_modified ~n:2 t.db path in
-  match lm with
-  | [ _; commit ] -> restore t ~path commit
-  | [] | [ _ ] ->
+let rollback t ?(path = []) n : unit Lwt.t =
+  let* lm = Store.last_modified ~n:(n + 1) t.db path in
+  match List.rev lm with
+  | commit :: _ :: _ -> restore t ~path commit
+  | [ _ ] | [] ->
       let info = info t "Rollback %a" Irmin.Type.(pp Store.Path.t) path in
       Error.mk @@ fun () ->
-      Store.with_tree_exn ~info t.db path (fun _ ->
-          Lwt.return_some @@ Store.Tree.empty ())
-  | _ -> assert false
+      Store.with_tree_exn ~info t.db path (fun _ -> Lwt.return_none)
 
 let path_of_hash hash =
   let hash' = Irmin.Type.to_string Store.Hash.t hash in
