@@ -1,7 +1,7 @@
 .wasmstore
 *.wasm
-Cargo.lock
 target
+Cargo.lock
 node_modules
 __pycache__
 _build
@@ -9,5 +9,4 @@ _opam
 # Added by cargo
 
 /target
-/Cargo.lock
 duniverse
