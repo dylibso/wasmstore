@@ -233,10 +233,10 @@ let callback t ~headers ~auth _conn req body =
         let json = Yojson.Safe.to_string (`List versions) in
         let body = Body.of_string json in
         response @@ Server.respond ~headers ~body ~status:`OK ()
-    | `GET, `V1 ("version" :: version :: path) -> (
+    | `GET, `V1 ("version" :: v :: path) -> (
         let* () = Body.drain_body body in
-        let* versions = versions t path in
-        match List.nth_opt versions (int_of_string version) with
+        let* version = version t path (int_of_string v) in
+        match version with
         | None -> response @@ Server.respond_not_found ()
         | Some (_, `Commit commit) ->
             let* commit = Store.Commit.of_hash (Store.repo t.db) commit in

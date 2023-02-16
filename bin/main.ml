@@ -466,6 +466,29 @@ let versions =
   let term = Term.(const cmd $ store $ path 0) in
   Cmd.v info term
 
+let version =
+  let cmd store path v =
+    run
+      (let* t = store in
+       let+ version = version t path v in
+       match version with
+       | Some (k, `Commit v) ->
+           Fmt.pr "%a\tcommit: %a\n" (Irmin.Type.pp Hash.t) k
+             (Irmin.Type.pp Hash.t) v
+       | None ->
+           Fmt.pr "ERROR version %d does not exist for %a\n" v
+             (Irmin.Type.pp Store.path_t)
+             path)
+  in
+  let doc = "get a past version of a plugin" in
+  let info = Cmd.info "version" ~doc in
+  let version =
+    let doc = Arg.info ~docv:"VERSION" ~doc:"Version" [] in
+    Arg.(value & pos 0 int 0 & doc)
+  in
+  let term = Term.(const cmd $ store $ path 1 $ version) in
+  Cmd.v info term
+
 let commands =
   Cmd.group (Cmd.info "wasmstore")
     [
@@ -489,6 +512,7 @@ let commands =
       commit;
       filename;
       Log.log store;
+      version;
     ]
 
 let () = exit (Cmd.eval commands)

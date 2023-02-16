@@ -120,6 +120,9 @@ val unwatch : Store.watch -> unit Lwt.t
 
 val versions : t -> string list -> (hash * [ `Commit of hash ]) list Lwt.t
 
+val version :
+  t -> string list -> int -> (hash * [ `Commit of hash ]) option Lwt.t
+
 module Commit_info : sig
   type t = {
     hash : Hash.t;

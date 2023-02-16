@@ -268,6 +268,10 @@ let versions t path =
             Lwt.return_some (h, `Commit (Store.Commit.hash commit)))
     lm
 
+let version t path index =
+  let+ versions = versions t path in
+  List.nth_opt versions index
+
 module Commit_info = struct
   type t = {
     hash : Hash.t;
