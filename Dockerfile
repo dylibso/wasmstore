@@ -14,11 +14,12 @@ RUN eval $(opam env) && dune build
 
 FROM ocaml/opam:latest
 ENV PORT=6384
-ENV HOST=127.0.0.1
+ENV HOST=0.0.0.0
 COPY --from=build /usr/lib /usr/lib
 COPY --from=build /home/opam/src/_build/install/default/bin/wasmstore /usr/bin/wasmstore
 RUN sudo groupadd -r wasmstore && sudo useradd -m -r -g wasmstore wasmstore
 USER wasmstore
 WORKDIR /home/wasmstore
 EXPOSE ${PORT}
+RUN mkdir -p /home/wasmstore/db
 CMD wasmstore server --root /home/wasmstore/db --host ${HOST} --port ${PORT}
