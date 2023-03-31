@@ -32,6 +32,7 @@ let try_mkdir ?(mode = 0o755) path =
   Lwt.catch (fun () -> Lwt_unix.mkdir path mode) (fun _ -> Lwt.return_unit)
 
 let v ?(author = "wasmstore") ?(branch = Store.Branch.main) root =
+  let* () = try_mkdir root in
   let config = Irmin_fs.config root in
   let* repo = Store.Repo.v config in
   let* db = Store.of_branch repo branch in
