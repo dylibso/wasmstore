@@ -76,6 +76,7 @@ let find_module t ~headers path =
         Header.add headers "Wasmstore-Hash"
           (Irmin.Type.to_string Store.Hash.t hash)
       in
+      let headers = Header.add headers "Content-Type" "application/wasm" in
       response @@ Server.respond_file ~headers ~fname:(root t // filename) ()
   | _ ->
       response @@ Server.respond_string ~headers ~status:`Not_found ~body:"" ()
