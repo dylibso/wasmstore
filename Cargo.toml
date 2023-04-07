@@ -8,7 +8,7 @@ crate-type = ["staticlib"] # You can also use cdylib, depending on your project
 
 [dependencies]
 ocaml = {git = "https://github.com/zshipko/ocaml-rs", branch="ocaml5"}
-wasmparser = "0.98" 
+wasmparser = "0.102" 
 
 [build-dependencies]
 cc = "1"
