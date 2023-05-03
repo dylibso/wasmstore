@@ -94,7 +94,8 @@ branch.
 - `GET /api/v1/watch`
   - A WebSocket endpoint that sends updates about changes to the store to the client
 
-There are existing clients for [Rust](https://github.com/dylibso/wasmstore/tree/main/client/rust) and [Javascript](https://github.com/dylibso/wasmstore/tree/main/client/js)
+There are existing clients for [Rust](https://github.com/dylibso/wasmstore/tree/main/client/rust), [Javascript](https://github.com/dylibso/wasmstore/tree/main/client/js)
+[Python](https://github.com/dylibso/wasmstore/tree/main/client/python) and [Go](https://github.com/dylibso/wasmstore/tree/main/client/go)
 
 ### Authentication
 
