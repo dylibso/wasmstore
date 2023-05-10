@@ -315,6 +315,11 @@ impl Client {
         let res: CommitInfo = res.json().await?;
         Ok(res)
     }
+
+    pub async fn auth(&self, method: reqwest::Method) -> Result<bool, Error> {
+        let res = self.request(method, self.endpoint("/auth"), None).await?;
+        Ok(res.status() == 200)
+    }
 }
 
 #[cfg(test)]

@@ -93,6 +93,8 @@ branch.
   - Returns a previous version of a module at the provided path
 - `GET /api/v1/watch`
   - A WebSocket endpoint that sends updates about changes to the store to the client
+- `* /api/v1/auth`
+  - This endpoint can be used with any method and is used to check capabilities for a secret
 
 There are existing clients for [Rust](https://github.com/dylibso/wasmstore/tree/main/client/rust), [Javascript](https://github.com/dylibso/wasmstore/tree/main/client/js)
 [Python](https://github.com/dylibso/wasmstore/tree/main/client/python) and [Go](https://github.com/dylibso/wasmstore/tree/main/client/go)

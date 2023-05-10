@@ -121,3 +121,7 @@ class Client:
     def commit_info(self, hash):
         res = self.request("GET", "/commit/" + hash)
         return res.json()
+
+    def auth(self, method):
+        res = self.request(method, "/auth")
+        return res.ok

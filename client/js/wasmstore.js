@@ -1,17 +1,24 @@
-(async function() {
+(async function () {
   try {
-    var node_fetch = await import('node-fetch');
+    var node_fetch = await import("node-fetch");
     global.fetch = node_fetch.default;
   } catch (_) {
-
   }
-})().catch(_ => { return });
+})().catch((_) => {
+  return;
+});
 
-export async function request(method, url, body = null, auth = null, branch = null) {
+export async function request(
+  method,
+  url,
+  body = null,
+  auth = null,
+  branch = null,
+) {
   let opts = {
     method,
-    mode: 'cors',
-    headers: {}
+    mode: "cors",
+    headers: {},
   };
 
   if (body !== null) {
@@ -30,11 +37,11 @@ export async function request(method, url, body = null, auth = null, branch = nu
 }
 
 function normalizePath(path) {
-  if (typeof path === 'string') {
+  if (typeof path === "string") {
     return path;
   }
 
-  return path.join('/');
+  return path.join("/");
 }
 
 function pathString(path) {
@@ -45,7 +52,12 @@ function pathString(path) {
 }
 
 export class Client {
-  constructor(url = "http://127.0.0.1:6384", branch = null, auth = null, version = "v1") {
+  constructor(
+    url = "http://127.0.0.1:6384",
+    branch = null,
+    auth = null,
+    version = "v1",
+  ) {
     this.url = url + "/api/" + version;
     this.auth = auth;
     this.branch = branch;
@@ -84,7 +96,10 @@ export class Client {
   }
 
   async restore(hash, path = null) {
-    let res = await this.request("POST", "/restore/" + hash + (path === null ? "" : "/" + pathString(path)));
+    let res = await this.request(
+      "POST",
+      "/restore/" + hash + (path === null ? "" : "/" + pathString(path)),
+    );
     return res.ok;
   }
 
@@ -122,17 +137,20 @@ export class Client {
     let res = await this.request("DELETE", "/branch/" + name);
     return res.ok;
   }
-  
+
   async set(path, hash) {
-    let res = await this.request("POST", "/hash/" + hash + "/" + pathString(path));
+    let res = await this.request(
+      "POST",
+      "/hash/" + hash + "/" + pathString(path),
+    );
     return res.ok;
   }
-  
+
   async contains(path) {
     let res = await this.request("HEAD", "/module/" + pathString(path));
     return res.ok;
   }
-  
+
   async commitInfo(hash) {
     let res = await this.request("GET", "/commit/" + hash);
     return await res.json();
@@ -141,11 +159,15 @@ export class Client {
   async watch(callback) {
     let ws = new WebSocket(this.url.replace("http", "ws") + "/watch");
 
-    ws.onmessage = function(msg) {
-      callback(JSON.parse(msg.data))
+    ws.onmessage = function (msg) {
+      callback(JSON.parse(msg.data));
     };
 
     return ws;
   }
-}
 
+  async auth(method) {
+    let res = await this.request(method, "/auth");
+    return res.ok;
+  }
+}

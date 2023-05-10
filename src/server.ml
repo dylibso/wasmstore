@@ -288,6 +288,9 @@ let callback t ~headers ~auth _conn req body =
         in
         w := Some watch;
         a
+    | _, `V1 [ "auth" ] ->
+        let* () = Body.drain_body body in
+        response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
     | _ ->
         let* () = Body.drain_body body in
         response

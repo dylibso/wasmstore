@@ -235,20 +235,12 @@ func (c *Client) List(path ...string) (map[string]Hash, error) {
 
 	var s map[string]Hash
 	err = json.Unmarshal(res, &s)
-	if err != nil {
-		return nil, err
-	}
-
-	return s, nil
+	return s, err
 }
 
 func (c *Client) Contains(path ...string) (bool, error) {
 	_, code, err := c.Request("HEAD", "/module/"+JoinPath(path), nil)
-	if err != nil {
-		return false, err
-	}
-
-	return code == 200, nil
+	return code == 200, err
 }
 
 func (c *Client) CommitInfo(hash CommitHash) (CommitInfo, error) {
@@ -264,4 +256,9 @@ func (c *Client) CommitInfo(hash CommitHash) (CommitInfo, error) {
 	}
 
 	return s, nil
+}
+
+func (c *Client) Auth(method string) (bool, error) {
+	_, code, err := c.Request(method, "/auth", nil)
+	return code == 200, err
 }
