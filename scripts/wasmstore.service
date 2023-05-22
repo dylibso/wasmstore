@@ -1,0 +1,6 @@
+[Unit]
+Description=wasmstore
+
+[Service]
+ExecStart=/usr/local/bin/wasmstore server
+# WorkingDirectory=/
