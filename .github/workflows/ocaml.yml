@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: 'Install deps'
         run: bash -c '''case "$(uname)" in
-          (*Linux*) sudo apt-get install -y libev-dev libssl-dev pkg-config; ;;
+          (*Linux*) sudo apt update -y && sudo apt-get install -y libev-dev libssl-dev pkg-config; ;;
           (*Darwin*) brew install libev openssl pkg-config; ;;
           esac'''
       - name: 'Checkout code'
