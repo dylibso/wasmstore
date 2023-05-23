@@ -41,13 +41,13 @@ jobs:
       - run: opam install . --deps-only -y
       - name: 'Make release'
         run: opam exec -- make release
-      - name: Upload Artifact to Summary
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ env.ARTIFACT_DIR }}
-          path: |
-            *.tar.gz
-            *.checksum.txt
+      # - name: Upload Artifact to Summary
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: ${{ env.ARTIFACT_DIR }}
+      #     path: |
+      #       *.tar.gz
+      #       *.checksum.txt
       - name: Upload Artifact to Release
         uses: softprops/action-gh-release@v1
         with:
