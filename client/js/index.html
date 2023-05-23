@@ -4,7 +4,7 @@
   <body>
     <script src="/wasmstore.js"></script>
     <script>
-      let client = new Client();
+      let client = new WasmstoreClient();
       client.watch(function(diff){
         console.log(diff);
       }).then(_ => {

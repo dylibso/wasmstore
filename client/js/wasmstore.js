@@ -1,6 +1,6 @@
 (async function () {
   try {
-    var node_fetch = await import("node-fetch");
+    const node_fetch = await import("node-fetch");
     global.fetch = node_fetch.default;
   } catch (_) {
   }
@@ -8,14 +8,15 @@
   return;
 });
 
-export async function request(
+export function request(
   method,
   url,
   body = null,
   auth = null,
   branch = null,
 ) {
-  let opts = {
+
+  const opts = {
     method,
     mode: "cors",
     headers: {},
@@ -63,12 +64,12 @@ export class Client {
     this.branch = branch;
   }
 
-  async request(method, url, body = null) {
+  request(method, url, body = null) {
     return request(method, this.url + url, body, this.auth, this.branch);
   }
 
   async find(path) {
-    let res = await this.request("GET", "/module/" + pathString(path));
+    const res = await this.request("GET", "/module/" + pathString(path));
     if (res.status === 404) {
       return null;
     }
@@ -77,7 +78,7 @@ export class Client {
   }
 
   async hash(path) {
-    let res = await this.request("GET", "/hash/" + pathString(path));
+    const res = await this.request("GET", "/hash/" + pathString(path));
     if (res.status === 404) {
       return null;
     }
@@ -86,17 +87,17 @@ export class Client {
   }
 
   async add(path, data) {
-    let res = await this.request("POST", "/module/" + pathString(path), data);
+    const res = await this.request("POST", "/module/" + pathString(path), data);
     return await res.text();
   }
 
   async snapshot() {
-    let res = await this.request("GET", "/snapshot");
+    const res = await this.request("GET", "/snapshot");
     return await res.text();
   }
 
   async restore(hash, path = null) {
-    let res = await this.request(
+    const res = await this.request(
       "POST",
       "/restore/" + hash + (path === null ? "" : "/" + pathString(path)),
     );
@@ -104,60 +105,66 @@ export class Client {
   }
 
   async rollback(path = null) {
-    let res = await this.request("POST", "/rollback/" + pathString(path));
+    const res = await this.request("POST", "/rollback/" + pathString(path));
     return res.ok;
   }
 
   async gc() {
-    let res = await this.request("POST", "/gc");
+    const res = await this.request("POST", "/gc");
     return res.ok;
   }
 
   async versions(path) {
-    let res = await this.request("GET", "/versions/" + pathString(path));
+    const res = await this.request("GET", "/versions/" + pathString(path));
     return await res.json();
   }
 
   async list(path = null) {
-    let res = await this.request("GET", "/modules/" + pathString(path));
+    const res = await this.request("GET", "/modules/" + pathString(path));
     return await res.json();
   }
 
   async branches() {
-    let res = await this.request("GET", "/branches");
+    const res = await this.request("GET", "/branches");
     return await res.json();
   }
 
   async createBranch(name) {
-    let res = await this.request("POST", "/branch/" + name);
+    const res = await this.request("POST", "/branch/" + name);
     return res.ok;
   }
 
   async deleteBranch(name) {
-    let res = await this.request("DELETE", "/branch/" + name);
+    const res = await this.request("DELETE", "/branch/" + name);
     return res.ok;
   }
 
   async set(path, hash) {
-    let res = await this.request(
+    const res = await this.request(
       "POST",
       "/hash/" + hash + "/" + pathString(path),
     );
     return res.ok;
   }
 
+  async delete(path) {
+    const res = await this.request("DELETE", "/module/" + pathString(path));
+    return res.ok;
+  }
+
+
   async contains(path) {
-    let res = await this.request("HEAD", "/module/" + pathString(path));
+    const res = await this.request("HEAD", "/module/" + pathString(path));
     return res.ok;
   }
 
   async commitInfo(hash) {
-    let res = await this.request("GET", "/commit/" + hash);
+    const res = await this.request("GET", "/commit/" + hash);
     return await res.json();
   }
 
-  async watch(callback) {
-    let ws = new WebSocket(this.url.replace("http", "ws") + "/watch");
+  watch(callback) {
+    const ws = new WebSocket(this.url.replace("http", "ws") + "/watch");
 
     ws.onmessage = function (msg) {
       callback(JSON.parse(msg.data));
@@ -167,7 +174,8 @@ export class Client {
   }
 
   async auth(method) {
-    let res = await this.request(method, "/auth");
+    const res = await this.request(method, "/auth");
     return res.ok;
   }
+
 }
