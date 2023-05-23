@@ -39,7 +39,7 @@ jobs:
         with:
           ocaml-compiler: '${{ matrix.ocaml-compiler }}'
       - run: opam install . --deps-only -y
-      - name: 'Run OCaml tests'
+      - name: 'Make release'
         run: opam exec -- make release
       - name: Upload Artifact to Summary
         uses: actions/upload-artifact@v3
@@ -53,7 +53,7 @@ jobs:
         with:
           files: |
             *.tar.gz
-            *checksum..txt
+            *.checksum.txt
     strategy:
       fail-fast: true
       matrix:
