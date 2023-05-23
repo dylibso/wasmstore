@@ -1,16 +1,11 @@
-name: 'OCaml tests'
+name: 'Release'
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches:
-      - main
-  push:
-    branches:
-      - main
+  release:
 jobs:
-  build:
-    name: Build
+  exe:
+    name: Release executable
     runs-on: '${{ matrix.os }}'
     steps:
       - name: 'Install deps'
@@ -45,16 +40,20 @@ jobs:
           ocaml-compiler: '${{ matrix.ocaml-compiler }}'
       - run: opam install . --deps-only -y
       - name: 'Run OCaml tests'
-        run: opam exec -- dune runtest
-      - name: Generate executable
-        run: |
-          opam exec -- dune build
-      - name: Save wasmstore executable
+        run: opam exec -- make release
+      - name: Upload Artifact to Summary
         uses: actions/upload-artifact@v3
         with:
-          name: wasmstore-${{ runner.platform }}
+          name: ${{ env.ARTIFACT_DIR }}
           path: |
-            _build/install/default/bin/wasmstore
+            *.tar.gz
+            *.checksum.txt
+      - name: Upload Artifact to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            *.tar.gz
+            *checksum..txt
     strategy:
       fail-fast: true
       matrix:
@@ -62,5 +61,5 @@ jobs:
           # - 4.14.0
           - 5.0.0
         os:
-          #- macos-latest
+          - macos-latest
           - ubuntu-latest
