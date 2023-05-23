@@ -15,6 +15,7 @@ export function request(
   auth = null,
   branch = null,
 ) {
+
   const opts = {
     method,
     mode: "cors",
@@ -151,6 +152,7 @@ export class Client {
     return res.ok;
   }
 
+
   async contains(path) {
     const res = await this.request("HEAD", "/module/" + pathString(path));
     return res.ok;
@@ -170,4 +172,10 @@ export class Client {
 
     return ws;
   }
+
+  async auth(method) {
+    const res = await this.request(method, "/auth");
+    return res.ok;
+  }
+
 }
