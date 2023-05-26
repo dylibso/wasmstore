@@ -26,6 +26,46 @@ A content-addressable store for WASM modules
   - `snapshot` gets the current `commit` hash
   - `merge` is used to merge a `branch` into another
 
+## Building
+
+### Docker
+
+There is a `Dockerfile` at the root of the repository that can be used to build and run the `wasmstore` server:
+
+```shell
+$ docker build -t wasmstore .
+$ docker run -it wasmstore
+```
+
+### Opam
+
+The `wasmstore` executable contains the command-line interface and the server, to build it you will need [opam](https://opam.ocaml.org)
+installed.
+
+```shell
+$ opam install . --deps-only
+$ dune build
+$ dune exec ./bin/main.exe --help
+```
+
+`wasmstore` can also be built using [opam-monorepo](https://github.com/tarides/opam-monorepo):
+
+```shell
+$ opam repository add dune-universe git+https://github.com/dune-universe/opam-overlays.git
+$ opam install opam-monorepo
+$ opam monorepo pull
+$ dune build ./bin
+$ dune exec ./bin/main.exe --help
+```
+
+## Installation
+
+Once `wasmstore` has been built it can be installed with:
+
+```sh
+$ make PREFIX=/usr/local install
+```
+
 ## HTTP Interface
 
 The server can be started using the `wasmstore` executable:

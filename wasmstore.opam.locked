@@ -43,7 +43,7 @@ depends: [
   "duration" {= "0.2.1" & ?vendor}
   "either" {= "1.0.0" & ?vendor}
   "eqaf" {= "0.9" & ?vendor}
-  "findlib" {= "1.8.1+dune" & ?vendor}
+  "findlib" {= "1.9.5+dune" & ?vendor}
   "fmt" {= "0.9.0+dune" & ?vendor}
   "fpath" {= "0.7.3+dune" & ?vendor}
   "fsevents" {= "0.3.0" & ?vendor}
@@ -53,8 +53,8 @@ depends: [
   "integers" {= "0.7.0" & ?vendor}
   "ipaddr" {= "5.5.0" & ?vendor}
   "ipaddr-sexp" {= "5.5.0" & ?vendor}
-  "irmin" {= "3.7.0" & ?vendor}
-  "irmin-fs" {= "3.7.0" & ?vendor}
+  "irmin" {= "3.7.1" & ?vendor}
+  "irmin-fs" {= "3.7.1" & ?vendor}
   "irmin-watcher" {= "0.5.0" & ?vendor}
   "jsonm" {= "1.0.1+dune" & ?vendor}
   "logs" {= "0.7.0+dune2" & ?vendor}
@@ -73,7 +73,7 @@ depends: [
   "ocaml-config" {= "3"}
   "ocaml-options-vanilla" {= "1"}
   "ocaml-syntax-shims" {= "1.0.0" & ?vendor}
-  "ocamlfind" {= "1.8.1+dune" & ?vendor}
+  "ocamlfind" {= "1.9.5+dune" & ?vendor}
   "ocamlgraph" {= "2.0.0" & ?vendor}
   "ocplib-endian" {= "1.2" & ?vendor}
   "optint" {= "0.3.0" & ?vendor}
@@ -81,11 +81,11 @@ depends: [
   "pbkdf" {= "1.2.0" & ?vendor}
   "ppx_derivers" {= "1.2.1" & ?vendor}
   "ppx_deriving" {= "5.2.1" & ?vendor}
-  "ppx_irmin" {= "3.7.0" & ?vendor}
+  "ppx_irmin" {= "3.7.1" & ?vendor}
   "ppx_repr" {= "0.6.0" & ?vendor}
   "ppx_sexp_conv" {= "v0.15.1" & ?vendor}
   "ppxlib" {= "0.29.1" & ?vendor}
-  "ptime" {= "1.0.0+dune2" & ?vendor}
+  "ptime" {= "1.1.0+dune" & ?vendor}
   "re" {= "1.10.4" & ?vendor}
   "repr" {= "0.6.0" & ?vendor}
   "result" {= "1.5" & ?vendor}
@@ -282,8 +282,8 @@ pin-depends: [
     "https://github.com/mirage/eqaf/releases/download/v0.9/eqaf-0.9.tbz"
   ]
   [
-    "findlib.1.8.1+dune"
-    "https://github.com/dune-universe/lib-findlib/archive/v1.8.1+dune.tar.gz"
+    "findlib.1.9.5+dune"
+    "https://github.com/dune-universe/lib-findlib/releases/download/1.9.5%2Bdune/findlib-1.9.5.dune.tbz"
   ]
   [
     "fmt.0.9.0+dune"
@@ -322,12 +322,12 @@ pin-depends: [
     "https://github.com/mirage/ocaml-ipaddr/releases/download/v5.5.0/ipaddr-5.5.0.tbz"
   ]
   [
-    "irmin.3.7.0"
-    "https://github.com/mirage/irmin/releases/download/3.7.0/irmin-3.7.0.tbz"
+    "irmin.3.7.1"
+    "https://github.com/mirage/irmin/releases/download/3.7.1/irmin-3.7.1.tbz"
   ]
   [
-    "irmin-fs.3.7.0"
-    "https://github.com/mirage/irmin/releases/download/3.7.0/irmin-3.7.0.tbz"
+    "irmin-fs.3.7.1"
+    "https://github.com/mirage/irmin/releases/download/3.7.1/irmin-3.7.1.tbz"
   ]
   [
     "irmin-watcher.0.5.0"
@@ -383,8 +383,8 @@ pin-depends: [
     "https://github.com/ocaml-ppx/ocaml-syntax-shims/releases/download/1.0.0/ocaml-syntax-shims-1.0.0.tbz"
   ]
   [
-    "ocamlfind.1.8.1+dune"
-    "https://github.com/dune-universe/lib-findlib/archive/v1.8.1+dune.tar.gz"
+    "ocamlfind.1.9.5+dune"
+    "https://github.com/dune-universe/lib-findlib/releases/download/1.9.5%2Bdune/findlib-1.9.5.dune.tbz"
   ]
   [
     "ocamlgraph.2.0.0"
@@ -415,8 +415,8 @@ pin-depends: [
     "https://github.com/ocaml-ppx/ppx_deriving/releases/download/v5.2.1/ppx_deriving-v5.2.1.tbz"
   ]
   [
-    "ppx_irmin.3.7.0"
-    "https://github.com/mirage/irmin/releases/download/3.7.0/irmin-3.7.0.tbz"
+    "ppx_irmin.3.7.1"
+    "https://github.com/mirage/irmin/releases/download/3.7.1/irmin-3.7.1.tbz"
   ]
   [
     "ppx_repr.0.6.0"
@@ -431,8 +431,8 @@ pin-depends: [
     "https://github.com/ocaml-ppx/ppxlib/releases/download/0.29.1/ppxlib-0.29.1.tbz"
   ]
   [
-    "ptime.1.0.0+dune2"
-    "https://github.com/dune-universe/ptime/releases/download/v1.0.0%2Bdune2/ptime-1.0.0.dune2.tbz"
+    "ptime.1.1.0+dune"
+    "https://github.com/dune-universe/ptime/releases/download/v1.1.0%2Bdune/ptime-1.1.0.dune.tbz"
   ]
   [
     "re.1.10.4"
@@ -590,10 +590,11 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/dune-universe/lib-findlib/archive/v1.8.1+dune.tar.gz"
+    "https://github.com/dune-universe/lib-findlib/releases/download/1.9.5%2Bdune/findlib-1.9.5.dune.tbz"
     "lib-findlib"
     [
-      "sha256=1a337aaedca94837d4d6a1689ed18109e4a2cfd4aa99a56252a6f19fe1291bb0"
+      "sha256=5242e5a0cfb2af52d6b596767513d80d2a3588608b366c759f9df0841736a228"
+      "sha512=1b39aedd0cbf623acb9abca88e65e5114f44524f3443f45def184663da76db515e791bee625282a69d20d88e7bc7d4522dbd142e551e09bd7a4cf99d1eabfe95"
     ]
   ]
   [
@@ -629,11 +630,11 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/dune-universe/ptime/releases/download/v1.0.0%2Bdune2/ptime-1.0.0.dune2.tbz"
+    "https://github.com/dune-universe/ptime/releases/download/v1.1.0%2Bdune/ptime-1.1.0.dune.tbz"
     "ptime"
     [
-      "sha256=10097ae4e8426f2e8cf64df150fb43179a7493a02e0ccef4f45124e3f08512a1"
-      "sha512=c49781faba1b9bf4cd01fe810e46354cdfa945f24642fb8aeabe2ab4a576717a18de7439b015f288ebaddcae9bde2fd01eff465c986a0e9ebcb2c82e8ce8d9b4"
+      "sha256=9aa6645808ce539eeafe4eaf781d6d0ae5639c90592cee31d15cf9363acf9234"
+      "sha512=0d037fc8f11c25b407f5501bd614dbbadb83fd6dce2fff5c0eeae27a9cd616f69f399f0cb3a04a2b0588cf1866cb16d6d1ae599791509cb995a92d3ae33ad1a0"
     ]
   ]
   [
@@ -781,11 +782,11 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/mirage/irmin/releases/download/3.7.0/irmin-3.7.0.tbz"
+    "https://github.com/mirage/irmin/releases/download/3.7.1/irmin-3.7.1.tbz"
     "irmin"
     [
-      "sha256=cc6846d91459abc61e713b9adb55fe0427d9e320669f023a609121af1893b57a"
-      "sha512=e3f8519b5b6c2dc27dc2e1cce9daed927ea17ce298807cc9ec854ea700122fa3866be991c7e01e1226919d8a9c7a7b0f679a80078d2aed17b83aeb961845eb81"
+      "sha256=8d1a49318bda711ed44d9ea27ecd044b1d650390633d5b08f76590689c22056f"
+      "sha512=2995e6acc53dee2c59bf473c7c16c74daebfa193df552ec83ffe88fe598e26d4d8ff5da4f0cd575adaa49efa4b317d74f2c814c1b5601bed3833d76f377b6da7"
     ]
   ]
   [

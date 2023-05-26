@@ -12,7 +12,7 @@ build:
 
 install:
 	mkdir -p $(PREFIX)/bin
-	cp _build/install/default/bin/wasmstore  $(PREFIX)/bin/wasmstore
+	cp _build/default/bin/main.exe $(PREFIX)/bin/wasmstore
 
 uninstall:
 	rm -f $(PREFIX)/bin/wasmstore 
