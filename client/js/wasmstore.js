@@ -15,7 +15,6 @@ export function request(
   auth = null,
   branch = null,
 ) {
-
   const opts = {
     method,
     mode: "cors",
@@ -75,6 +74,11 @@ export class Client {
     }
 
     return res;
+  }
+
+  async instantiate(path, imports = { env: {} }) {
+    const res = await this.find(path);
+    return WebAssembly.instantiateStreaming(res, imports);
   }
 
   async hash(path) {
@@ -152,7 +156,6 @@ export class Client {
     return res.ok;
   }
 
-
   async contains(path) {
     const res = await this.request("HEAD", "/module/" + pathString(path));
     return res.ok;
@@ -177,5 +180,4 @@ export class Client {
     const res = await this.request(method, "/auth");
     return res.ok;
   }
-
 }
