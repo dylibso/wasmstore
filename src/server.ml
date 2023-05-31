@@ -142,159 +142,160 @@ let require_auth t ~body ~auth ~headers req ~v1 =
         response
         @@ Server.respond_string ~headers ~status:`Unauthorized ~body:"" ()
 
-let callback t ~headers ~auth _conn req body =
-  require_auth t ~auth ~headers ~body req ~v1:(fun t -> function
-    | `GET, `V1 ("commit" :: [ hash ]) -> (
-        let hash' = Irmin.Type.of_string Hash.t hash in
-        let fail body status =
-          response @@ Server.respond_string ~headers ~status ~body ()
-        in
-        match hash' with
-        | Error _ -> fail "invalid hash" `Bad_request
-        | Ok hash -> (
-            let* info = commit_info t hash in
-            match info with
-            | Some info ->
-                let body = Irmin.Type.to_json_string Commit_info.t info in
-                response @@ Server.respond_string ~headers ~status:`OK ~body ()
-            | None -> fail "invalid commit" `Not_found))
-    | `GET, `V1 ("modules" :: path) ->
-        let* () = Body.drain_body body in
-        list_modules t ~headers path
-    | `GET, `V1 ("module" :: path) ->
-        let* () = Body.drain_body body in
-        find_module t ~headers path
-    | `HEAD, `V1 ("module" :: path) ->
-        let* () = Body.drain_body body in
-        let* exists = contains t path in
-        response
-        @@ Server.respond_string ~headers
-             ~status:(if exists then `OK else `Not_found)
-             ~body:"" ()
-    | `GET, `V1 ("hash" :: path) ->
-        let* () = Body.drain_body body in
-        find_hash t ~headers path
-    | `POST, `V1 ("hash" :: hash :: path) ->
-        let* () = Body.drain_body body in
-        set_hash t ~headers hash path
-    | `POST, `V1 ("module" :: path) -> add_module t ~headers body path
-    | `DELETE, `V1 ("module" :: path) ->
-        let* () = Body.drain_body body in
-        delete_module t ~headers path
-    | `POST, `V1 [ "gc" ] ->
-        let* () = Body.drain_body body in
-        let* _ = gc t in
-        response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
-    | `POST, `V1 [ "merge"; from_branch ] -> (
-        let* res = merge t from_branch in
-        match res with
-        | Ok _ ->
-            response @@ Server.respond_string ~status:`OK ~headers ~body:"" ()
-        | Error r ->
-            response
-            @@ Server.respond_string ~headers ~status:`Bad_request
-                 ~body:(Irmin.Type.to_string Irmin.Merge.conflict_t r)
-                 ())
-    | `POST, `V1 ("restore" :: hash :: path) -> (
-        let hash = Irmin.Type.of_string Store.Hash.t hash in
-        match hash with
-        | Error _ ->
-            response
-            @@ Server.respond_string ~headers ~status:`Bad_request
-                 ~body:"invalid hash in request" ()
-        | Ok hash -> (
-            let* commit = Store.Commit.of_hash (repo t) hash in
-            match commit with
-            | None ->
-                response
-                @@ Server.respond_string ~headers ~status:`Not_found
-                     ~body:"commit not found" ()
-            | Some commit ->
-                let* () = restore ~path t commit in
-                response
-                @@ Server.respond_string ~headers ~status:`OK ~body:"" ()))
-    | `POST, `V1 ("rollback" :: path) ->
-        let* () = rollback t ~path 1 in
-        response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
-    | `GET, `V1 [ "snapshot" ] ->
-        let* commit = snapshot t in
-        response
-        @@ Server.respond_string ~headers ~status:`OK
-             ~body:
-               (Irmin.Type.to_string Store.Hash.t (Store.Commit.hash commit))
-             ()
-    | `GET, `V1 ("versions" :: path) ->
-        let* versions = versions t path in
-        let conv = Irmin.Type.to_string Hash.t in
-        let versions =
-          List.map
-            (fun (k, `Commit v) -> `List [ `String (conv k); `String (conv v) ])
-            versions
-        in
-        let json = Yojson.Safe.to_string (`List versions) in
-        let body = Body.of_string json in
-        response @@ Server.respond ~headers ~body ~status:`OK ()
-    | `GET, `V1 ("version" :: v :: path) -> (
-        let* () = Body.drain_body body in
-        let* version = version t path (int_of_string v) in
-        match version with
-        | None -> response @@ Server.respond_not_found ()
-        | Some (_, `Commit commit) ->
-            let* commit = Store.Commit.of_hash (Store.repo t.db) commit in
-            let* store = Store.of_commit (Option.get commit) in
-            let t' = { t with db = store } in
-            find_module t' ~headers path)
-    | `GET, `V1 [ "branches" ] ->
-        let* () = Body.drain_body body in
-        list_branches t ~headers
-    | `PUT, `V1 [ "branch"; branch ] ->
-        let* () = Branch.switch t branch in
-        response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
-    | `POST, `V1 [ "branch"; branch ] -> (
-        let* res = Branch.create t branch in
-        match res with
-        | Ok _ ->
-            response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
-        | Error (`Msg s) ->
-            response
-            @@ Server.respond_string ~headers ~status:`Conflict ~body:s ())
-    | `DELETE, `V1 [ "branch"; branch ] ->
-        let* () = Branch.delete t branch in
-        response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
-    | `GET, `V1 [ "branch" ] ->
-        response @@ Server.respond_string ~headers ~status:`OK ~body:t.branch ()
-    | `GET, `V1 [ "watch" ] ->
-        let w = ref None in
-        let* a, send =
-          Server_websocket.upgrade_connection req (fun msg ->
-              if msg.opcode = Websocket.Frame.Opcode.Close then
+(** [/api/v1] endpoints *)
+let v1 t ~headers ~body ~req = function
+  | `GET, `V1 ("commit" :: [ hash ]) -> (
+      let hash' = Irmin.Type.of_string Hash.t hash in
+      let fail body status =
+        response @@ Server.respond_string ~headers ~status ~body ()
+      in
+      match hash' with
+      | Error _ -> fail "invalid hash" `Bad_request
+      | Ok hash -> (
+          let* info = commit_info t hash in
+          match info with
+          | Some info ->
+              let body = Irmin.Type.to_json_string Commit_info.t info in
+              response @@ Server.respond_string ~headers ~status:`OK ~body ()
+          | None -> fail "invalid commit" `Not_found))
+  | `GET, `V1 ("modules" :: path) ->
+      let* () = Body.drain_body body in
+      list_modules t ~headers path
+  | `GET, `V1 ("module" :: path) ->
+      let* () = Body.drain_body body in
+      find_module t ~headers path
+  | `HEAD, `V1 ("module" :: path) ->
+      let* () = Body.drain_body body in
+      let* exists = contains t path in
+      response
+      @@ Server.respond_string ~headers
+           ~status:(if exists then `OK else `Not_found)
+           ~body:"" ()
+  | `GET, `V1 ("hash" :: path) ->
+      let* () = Body.drain_body body in
+      find_hash t ~headers path
+  | `POST, `V1 ("hash" :: hash :: path) ->
+      let* () = Body.drain_body body in
+      set_hash t ~headers hash path
+  | `POST, `V1 ("module" :: path) -> add_module t ~headers body path
+  | `DELETE, `V1 ("module" :: path) ->
+      let* () = Body.drain_body body in
+      delete_module t ~headers path
+  | `POST, `V1 [ "gc" ] ->
+      let* () = Body.drain_body body in
+      let* _ = gc t in
+      response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
+  | `POST, `V1 [ "merge"; from_branch ] -> (
+      let* res = merge t from_branch in
+      match res with
+      | Ok _ ->
+          response @@ Server.respond_string ~status:`OK ~headers ~body:"" ()
+      | Error r ->
+          response
+          @@ Server.respond_string ~headers ~status:`Bad_request
+               ~body:(Irmin.Type.to_string Irmin.Merge.conflict_t r)
+               ())
+  | `POST, `V1 ("restore" :: hash :: path) -> (
+      let hash = Irmin.Type.of_string Store.Hash.t hash in
+      match hash with
+      | Error _ ->
+          response
+          @@ Server.respond_string ~headers ~status:`Bad_request
+               ~body:"invalid hash in request" ()
+      | Ok hash -> (
+          let* commit = Store.Commit.of_hash (repo t) hash in
+          match commit with
+          | None ->
+              response
+              @@ Server.respond_string ~headers ~status:`Not_found
+                   ~body:"commit not found" ()
+          | Some commit ->
+              let* () = restore ~path t commit in
+              response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
+          ))
+  | `POST, `V1 ("rollback" :: path) ->
+      let* () = rollback t ~path 1 in
+      response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
+  | `GET, `V1 [ "snapshot" ] ->
+      let* commit = snapshot t in
+      response
+      @@ Server.respond_string ~headers ~status:`OK
+           ~body:(Irmin.Type.to_string Store.Hash.t (Store.Commit.hash commit))
+           ()
+  | `GET, `V1 ("versions" :: path) ->
+      let* versions = versions t path in
+      let conv = Irmin.Type.to_string Hash.t in
+      let versions =
+        List.map
+          (fun (k, `Commit v) -> `List [ `String (conv k); `String (conv v) ])
+          versions
+      in
+      let json = Yojson.Safe.to_string (`List versions) in
+      let body = Body.of_string json in
+      response @@ Server.respond ~headers ~body ~status:`OK ()
+  | `GET, `V1 ("version" :: v :: path) -> (
+      let* () = Body.drain_body body in
+      let* version = version t path (int_of_string v) in
+      match version with
+      | None -> response @@ Server.respond_not_found ()
+      | Some (_, `Commit commit) ->
+          let* commit = Store.Commit.of_hash (Store.repo t.db) commit in
+          let* store = Store.of_commit (Option.get commit) in
+          let t' = { t with db = store } in
+          find_module t' ~headers path)
+  | `GET, `V1 [ "branches" ] ->
+      let* () = Body.drain_body body in
+      list_branches t ~headers
+  | `PUT, `V1 [ "branch"; branch ] ->
+      let* () = Branch.switch t branch in
+      response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
+  | `POST, `V1 [ "branch"; branch ] -> (
+      let* res = Branch.create t branch in
+      match res with
+      | Ok _ ->
+          response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
+      | Error (`Msg s) ->
+          response
+          @@ Server.respond_string ~headers ~status:`Conflict ~body:s ())
+  | `DELETE, `V1 [ "branch"; branch ] ->
+      let* () = Branch.delete t branch in
+      response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
+  | `GET, `V1 [ "branch" ] ->
+      response @@ Server.respond_string ~headers ~status:`OK ~body:t.branch ()
+  | `GET, `V1 [ "watch" ] ->
+      let w = ref None in
+      let* a, send =
+        Server_websocket.upgrade_connection req (fun msg ->
+            if msg.opcode = Websocket.Frame.Opcode.Close then
+              match !w with
+              | Some w -> Lwt.async (fun () -> Store.unwatch w)
+              | None -> ())
+      in
+      let+ watch =
+        watch t (fun diff ->
+            Lwt.catch
+              (fun () ->
+                let d = Yojson.Safe.to_string diff in
+                Lwt.wrap (fun () ->
+                    send (Some (Websocket.Frame.create ~content:d ()))))
+              (fun _ ->
                 match !w with
-                | Some w -> Lwt.async (fun () -> Store.unwatch w)
-                | None -> ())
-        in
-        let+ watch =
-          watch t (fun diff ->
-              Lwt.catch
-                (fun () ->
-                  let d = Yojson.Safe.to_string diff in
-                  Lwt.wrap (fun () ->
-                      send (Some (Websocket.Frame.create ~content:d ()))))
-                (fun _ ->
-                  match !w with
-                  | Some w' ->
-                      let+ () = Store.unwatch w' in
-                      w := None
-                  | None -> Lwt.return_unit))
-        in
-        w := Some watch;
-        a
-    | _, `V1 [ "auth" ] ->
-        let* () = Body.drain_body body in
-        response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
-    | _ ->
-        let* () = Body.drain_body body in
-        response
-        @@ Server.respond_string ~headers ~body:"" ~status:`Not_found ())
+                | Some w' ->
+                    let+ () = Store.unwatch w' in
+                    w := None
+                | None -> Lwt.return_unit))
+      in
+      w := Some watch;
+      a
+  | _, `V1 [ "auth" ] ->
+      let* () = Body.drain_body body in
+      response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
+  | _ ->
+      let* () = Body.drain_body body in
+      response @@ Server.respond_string ~headers ~body:"" ~status:`Not_found ()
+
+let callback t ~headers ~auth _conn req body =
+  require_auth t ~auth ~headers ~body req ~v1:(v1 ~headers ~body ~req)
 
 let run ?tls ?(cors = false) ?auth ?(host = "localhost") ?(port = 6384) t =
   let headers =
