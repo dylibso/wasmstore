@@ -1,4 +1,5 @@
 (executable
  (public_name wasmstore)
  (name main)
+ (modes exe)
  (libraries wasmstore cmdliner))

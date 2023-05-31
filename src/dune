@@ -1,6 +1,8 @@
 (library
  (name wasmstore)
  (public_name wasmstore)
+ (modes native)
+ (no_dynlink)
  (libraries
   unix
   lwt.unix
