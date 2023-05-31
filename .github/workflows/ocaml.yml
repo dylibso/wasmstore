@@ -61,5 +61,5 @@ jobs:
         ocaml-compiler:
           - 5.0.0
         os:
-          # - macos-latest
+          - macos-latest
           - ubuntu-latest
