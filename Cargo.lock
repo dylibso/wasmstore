@@ -58,7 +58,7 @@ dependencies = [
 [[package]]
 name = "ocaml"
 version = "1.0.0-beta.5"
-source = "git+https://github.com/zshipko/ocaml-rs?branch=ocaml5#d76d4e42e832544fe53a5e7e8fbea9f07a5c21e4"
+source = "git+https://github.com/zshipko/ocaml-rs?branch=ocaml5#974b520b6ea66974948e8016f007496c17012345"
 dependencies = [
  "ocaml-boxroot-sys",
  "ocaml-derive",
@@ -78,20 +78,20 @@ dependencies = [
 [[package]]
 name = "ocaml-build"
 version = "1.0.0-beta.5"
-source = "git+https://github.com/zshipko/ocaml-rs?branch=ocaml5#d76d4e42e832544fe53a5e7e8fbea9f07a5c21e4"
+source = "git+https://github.com/zshipko/ocaml-rs?branch=ocaml5#974b520b6ea66974948e8016f007496c17012345"
 dependencies = [
  "proc-macro2",
- "syn",
+ "syn 1.0.109",
 ]
 
 [[package]]
 name = "ocaml-derive"
 version = "1.0.0-beta.5"
-source = "git+https://github.com/zshipko/ocaml-rs?branch=ocaml5#d76d4e42e832544fe53a5e7e8fbea9f07a5c21e4"
+source = "git+https://github.com/zshipko/ocaml-rs?branch=ocaml5#974b520b6ea66974948e8016f007496c17012345"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn",
+ "syn 2.0.18",
 ]
 
 [[package]]
@@ -117,7 +117,7 @@ dependencies = [
 [[package]]
 name = "ocaml-sys"
 version = "0.24.0"
-source = "git+https://github.com/zshipko/ocaml-rs?branch=ocaml5#d76d4e42e832544fe53a5e7e8fbea9f07a5c21e4"
+source = "git+https://github.com/zshipko/ocaml-rs?branch=ocaml5#974b520b6ea66974948e8016f007496c17012345"
 dependencies = [
  "cc",
  "cty",
@@ -131,18 +131,18 @@ checksum = "478c572c3d73181ff3c2539045f6eb99e5491218eae919370993b890cdbdd98e"
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.56"
+version = "1.0.59"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b63bdb0cd06f1f4dedf69b254734f9b45af66e4a031e42a7480257d9898b435"
+checksum = "6aeca18b86b413c660b781aa319e4e2648a3e6f9eadc9b47e9038e6fe9f3451b"
 dependencies = [
  "unicode-ident",
 ]
 
 [[package]]
 name = "quote"
-version = "1.0.26"
+version = "1.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4424af4bf778aae2051a77b60283332f386554255d722233d09fbfc7e30da2fc"
+checksum = "1b9ab9c7eadfd8df19006f1cf1a4aed13540ed5cbc047010ece5826e10825488"
 dependencies = [
  "proc-macro2",
 ]
@@ -158,6 +158,17 @@ name = "syn"
 version = "1.0.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
+]
+
+[[package]]
+name = "syn"
+version = "2.0.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32d41677bcbe24c20c52e7c70b0d8db04134c5d1066bf98662e2871ad200ea3e"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -187,9 +198,9 @@ checksum = "92888ba5573ff080736b3648696b70cafad7d250551175acbaa4e0385b3e1460"
 
 [[package]]
 name = "unicode-ident"
-version = "1.0.8"
+version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5464a87b239f13a63a501f2701565754bae92d243d4bb7eb12f6d57d2269bf4"
+checksum = "b15811caf2415fb889178633e7724bad2509101cde276048e013b9def5e51fa0"
 
 [[package]]
 name = "unicode-normalization"
