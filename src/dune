@@ -1,5 +1,6 @@
 (library
  (name wasmstore)
+ (public_name wasmstore)
  (libraries
   unix
   lwt.unix
