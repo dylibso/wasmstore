@@ -1,0 +1,23 @@
+name: 'Release Rust client'
+
+on:
+  workflow_dispatch:
+
+jobs:
+  exe:
+    name: Release Rust client
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: |
+          cd client/rust
+          cargo publish --token ${CARGO_TOKEN}
+        env:
+          CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}

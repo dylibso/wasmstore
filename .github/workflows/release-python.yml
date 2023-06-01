@@ -1,0 +1,35 @@
+name: 'Release Python client'
+
+on:
+  workflow_dispatch:
+
+jobs:
+  exe:
+    name: Release Python client
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python env
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          check-latest: true
+
+      - name: Run image
+        uses: abatilo/actions-poetry@v2
+
+      - name: Build Python Host SDK
+        run: |
+          cd client/python
+          cp ../../LICENSE .
+          poetry install --no-dev
+          poetry build
+
+      - name: Release Python Host SDK
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: ${{ secrets.PYPI_API_USER }}
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages_dir: python/dist/
