@@ -26,4 +26,4 @@ jobs:
           CI: true
         run: |
           cd client/js
-          npm publish
+          npm publish --access=public

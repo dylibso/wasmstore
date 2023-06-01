@@ -1,6 +1,6 @@
 {
-  "name": "wasmstore",
-  "version": "0.0.1",
+  "name": "@dylibso/wasmstore",
+  "version": "0.1.0",
   "description": "Wasmstore client",
   "main": "wasmstore.js",
   "scripts": {
