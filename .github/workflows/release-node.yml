@@ -25,5 +25,5 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_API_TOKEN }}
           CI: true
         run: |
-          cd client/node
+          cd client/js
           npm publish
