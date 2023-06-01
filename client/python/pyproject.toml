@@ -2,8 +2,9 @@
 name = "wasmstore"
 version = "0.1.0"
 description = "Wasmstore client for Python"
-authors = ["zach <zach@dylib.so>"]
+authors = ["Dylibso <oss@dylib.so>"]
 license = "BSD-3-Clause"
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
