@@ -32,4 +32,4 @@ jobs:
         with:
           user: ${{ secrets.PYPI_API_USER }}
           password: ${{ secrets.PYPI_API_TOKEN }}
-          packages_dir: python/dist/
+          packages_dir: client/python/dist/
