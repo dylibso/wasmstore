@@ -1,5 +1,10 @@
 # wasmstore
 
+[![Latest github release](https://img.shields.io/github/v/release/dylibso/wasmstore?include_prereleases&label=latest)](https://github.com/dylibso/wasmstore/releases/latest)
+[![npm](https://img.shields.io/npm/v/@dylibso/wasmstore)](https://www.npmjs.com/package/@dylibso/wasmstore)
+[![pypi](https://img.shields.io/pypi/v/wasmstore)](https://pypi.org/project/wasmstore/)
+[![crates.io](https://img.shields.io/crates/v/wasmstore-client)](https://crates.io/crates/wasmstore-client)
+
 A content-addressable store for WASM modules
 
 - Built-in WASM validation
