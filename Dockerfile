@@ -1,4 +1,7 @@
 FROM rust:latest as rust
+LABEL org.opencontainers.image.source=https://github.com/dylibso/wasmstore
+LABEL org.opencontainers.image.description="Wasmstore image"
+LABEL org.opencontainers.image.licenses=BSD-3-Clause
 
 FROM ocaml/opam:latest as build
 RUN sudo apt-get update && sudo apt-get install -y libev-dev libgmp-dev pkg-config libssl-dev libffi-dev curl
