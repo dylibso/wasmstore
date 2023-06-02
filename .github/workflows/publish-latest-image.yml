@@ -2,8 +2,8 @@ name: Publish tagged release image
 
 on:
   push:
-    # tags:
-    #   - 'v*.*.*'
+    branches:
+      - main
 
 env: 
   VERSION: ${{ github.ref_name }} 
