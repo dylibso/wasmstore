@@ -1,4 +1,4 @@
-name: Publish tagged release image
+name: Publish latest image
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
           password: ${{ secrets.GHCR_TOKEN }}
 
       - name: define TAG for release
-        run: echo "TAG=ghcr.io/dylibso/wasmstore:${VERSION#v}" >> $GITHUB_ENV
+        run: echo "TAG=ghcr.io/dylibso/wasmstore:latest" >> $GITHUB_ENV
       
       - name: Build, tag, & push the latest image
         uses: docker/build-push-action@v4
