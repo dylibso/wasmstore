@@ -96,3 +96,15 @@ Set
   $ wasmstore versions b.wasm | awk '{ print $1 }'
   d926c50304238d423d63f52f5f460b1a7170fe870e10f031b9cbd74b29bc06e5
   b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31
+
+Export
+  $ wasmstore export -o ./exported
+  $ ls ./exported
+  b.wasm
+  c.wasm
+
+Backup
+  $ wasmstore backup -o backup.tar.gz
+  $ tar tzf ./backup.tar.gz | grep 'objects/65/8830c0dfcc89d80c695357f0774eb20ca47adb4286eedd52eb527f9cf03fd5'
+  ./objects/65/8830c0dfcc89d80c695357f0774eb20ca47adb4286eedd52eb527f9cf03fd5
+

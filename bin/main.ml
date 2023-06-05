@@ -3,6 +3,8 @@ open Wasmstore
 open Cmdliner
 open Util
 
+let ( // ) = Filename.concat
+
 let reporter ppf =
   let report src level ~over k msgf =
     let k _ =
@@ -491,7 +493,11 @@ let version =
 
 let backup =
   let cmd root output =
-    run (Unix.execvp "tar" [| "tar"; "czf"; output; root |])
+    let output =
+      if Filename.is_relative output then Unix.getcwd () // output else output
+    in
+    Unix.chdir root;
+    Unix.execvp "tar" [| "tar"; "czf"; output; "." |]
   in
   let doc = "create a tar backup of an entire store" in
   let info = Cmd.info "backup" ~doc in
@@ -504,8 +510,6 @@ let backup =
   in
   let term = Term.(const cmd $ root $ output) in
   Cmd.v info term
-
-let ( // ) = Filename.concat
 
 let rec mkdir_all p =
   let parent = Filename.dirname p in
