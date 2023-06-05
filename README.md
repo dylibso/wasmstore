@@ -39,7 +39,13 @@ There is a `Dockerfile` at the root of the repository that can be used to build 
 
 ```shell
 $ docker build -t wasmstore .
-$ docker run -it wasmstore
+$ docker run -it -p 6384:6384 wasmstore
+```
+
+## Pull from registry (Docker Hub or GitHub Registry)
+```sh
+$ docker pull dylibso/wasmstore
+$ docker run --rm -it -p 6384:6384 dylibso/wasmstore
 ```
 
 ### Opam
