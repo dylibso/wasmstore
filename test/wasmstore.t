@@ -104,7 +104,7 @@ Export
   c.wasm
 
 Backup
-  $ wasmstore backup -o backup.tar.gz
+  $ wasmstore backup backup.tar.gz
   $ tar tzf ./backup.tar.gz | grep 'objects/65/8830c0dfcc89d80c695357f0774eb20ca47adb4286eedd52eb527f9cf03fd5'
   ./objects/65/8830c0dfcc89d80c695357f0774eb20ca47adb4286eedd52eb527f9cf03fd5
 

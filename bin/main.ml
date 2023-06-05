@@ -501,13 +501,7 @@ let backup =
   in
   let doc = "create a tar backup of an entire store" in
   let info = Cmd.info "backup" ~doc in
-  let output =
-    let doc = "backup file" in
-    Arg.(
-      value
-      & opt string (Store.Branch.main ^ "tar.gz")
-      & info [ "output"; "o" ] ~docv:"NAME" ~doc)
-  in
+  let output = Arg.(value & pos 0 string "" & info [] ~docv:"PATH" ~doc) in
   let term = Term.(const cmd $ root $ output) in
   Cmd.v info term
 
@@ -549,7 +543,7 @@ let export =
     Arg.(
       value
       & opt string Store.Branch.main
-      & info [ "output"; "o" ] ~docv:"NAME" ~doc)
+      & info [ "output"; "o" ] ~docv:"OUTPUT" ~doc)
   in
   let term = Term.(const cmd $ store $ output) in
   Cmd.v info term
