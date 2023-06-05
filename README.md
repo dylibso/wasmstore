@@ -158,6 +158,10 @@ On the client side you should supply the key using the `Wasmstore-Auth` header
 
 ## Command line
 
+See the output of `wasmstore --help` for a full list of commands
+
+### Examples
+
 Add a file from disk
 
 ```sh
@@ -216,6 +220,26 @@ Run garbage collection:
 
 ```sh
 $ wasmstore gc
+```
+
+Export the main branch to a directory on disk:
+
+```sh
+$ wasmstore export -o ./wasm-modules
+```
+
+Backup the entire database:
+
+```sh
+$ wasmstore backup backup.tar.gz
+```
+
+To create a new store from a backup:
+
+```sh
+$ mkdir $WASMSTORE_ROOT
+$ cd $WASMSTORE_ROOT
+$ tar xzf /path/to/backup.tar.gz
 ```
 
 ## A note on garbage collection

@@ -3,6 +3,8 @@ open Wasmstore
 open Cmdliner
 open Util
 
+let ( // ) = Filename.concat
+
 let reporter ppf =
   let report src level ~over k msgf =
     let k _ =
@@ -489,6 +491,63 @@ let version =
   let term = Term.(const cmd $ store $ path 1 $ version) in
   Cmd.v info term
 
+let backup =
+  let cmd root output =
+    let output =
+      if Filename.is_relative output then Unix.getcwd () // output else output
+    in
+    Unix.chdir root;
+    Unix.execvp "tar" [| "tar"; "czf"; output; "." |]
+  in
+  let doc = "create a tar backup of an entire store" in
+  let info = Cmd.info "backup" ~doc in
+  let output = Arg.(value & pos 0 string "" & info [] ~docv:"PATH" ~doc) in
+  let term = Term.(const cmd $ root $ output) in
+  Cmd.v info term
+
+let rec mkdir_all p =
+  let parent = Filename.dirname p in
+  let* parent_exists = Lwt_unix.file_exists parent in
+  let* () = if not parent_exists then mkdir_all parent else Lwt.return_unit in
+  Lwt.catch
+    (fun () -> Lwt_unix.mkdir p 0o755)
+    (function
+      | Unix.Unix_error (Unix.EEXIST, _, _) -> Lwt.return_unit | e -> raise e)
+
+let export =
+  let cmd store output =
+    run
+      (let* t = store in
+       let repo = Wasmstore.repo t in
+       let root =
+         Irmin.Backend.Conf.get (Store.Repo.config repo) Irmin_fs.Conf.Key.root
+       in
+       let* files = Wasmstore.list t [] in
+       Lwt_list.iter_p
+         (fun (path, _) ->
+           let* v = Wasmstore.get_hash_and_filename t path in
+           match v with
+           | Some (_, filename) ->
+               let s = Lwt_io.chars_of_file (root // filename) in
+               let out = output // Irmin.Type.to_string Store.path_t path in
+               let parent = Filename.dirname out in
+               let* () = mkdir_all parent in
+               Lwt_io.chars_to_file out s
+           | None -> Lwt.return_unit)
+         files)
+  in
+  let doc = "create a view on disk from a branch or commit" in
+  let info = Cmd.info "export" ~doc in
+  let output =
+    let doc = "output path" in
+    Arg.(
+      value
+      & opt string Store.Branch.main
+      & info [ "output"; "o" ] ~docv:"OUTPUT" ~doc)
+  in
+  let term = Term.(const cmd $ store $ output) in
+  Cmd.v info term
+
 let commands =
   Cmd.group (Cmd.info "wasmstore")
     [
@@ -513,6 +572,8 @@ let commands =
       filename;
       Log.log store;
       version;
+      backup;
+      export;
     ]
 
 let () = exit (Cmd.eval commands)
