@@ -6,6 +6,7 @@ mod path;
 pub use hash::{Commit, Hash};
 pub use path::Path;
 
+#[derive(Clone)]
 pub struct Client {
     url: reqwest::Url,
     client: reqwest::Client,

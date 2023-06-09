@@ -30,12 +30,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
       
+      - name: define TAG for release
+        run: echo "GHCR_TAG=ghcr.io/dylibso/wasmstore:${VERSION#v}" >> $GITHUB_ENV
+      
       - name: Build, tag, & push the latest image
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: ghcr.io/dylibso/wasmstore:${VERSION#v}
+          tags: ${{ env.GHCR_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -45,12 +48,15 @@ jobs:
         with:
           username: dylibso
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: define TAG for release
+        run: echo "DOCKERHUB_TAG=dylibso/wasmstore:${VERSION#v}" >> $GITHUB_ENV
 
       - name: Build, tag, & push the latest image
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: dylibso/wasmstore:${VERSION#v}
+          tags: ${{ env.DOCKERHUB_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
