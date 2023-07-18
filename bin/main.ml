@@ -393,7 +393,7 @@ let branch =
          List.iter print_endline branches
        else if delete then Branch.delete t branch_name
        else
-         let* _ = Error.unwrap @@ Branch.create t branch_name in
+         let* _ = Error.unwrap_lwt @@ Branch.create t branch_name in
          Lwt.return_unit)
   in
   let doc = "Modify a branch" in

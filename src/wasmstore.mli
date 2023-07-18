@@ -20,13 +20,13 @@ module Error : sig
   exception Wasmstore of t
 
   val to_string : t -> string
-  val unwrap' : ('a, t) result -> 'a
-  val unwrap : ('a, t) result Lwt.t -> 'a Lwt.t
-  val wrap' : (unit -> 'a) -> ('a, t) result
-  val wrap : (unit -> 'a Lwt.t) -> ('a, t) result Lwt.t
+  val unwrap : ('a, t) result -> 'a
+  val unwrap_lwt : ('a, t) result Lwt.t -> 'a Lwt.t
+  val wrap : (unit -> 'a) -> ('a, t) result
+  val wrap_lwt : (unit -> 'a Lwt.t) -> ('a, t) result Lwt.t
   val throw : t -> 'a
-  val catch' : (unit -> 'a) -> (t -> 'a) -> 'a
-  val catch : (unit -> 'a Lwt.t) -> (t -> 'a Lwt.t) -> 'a Lwt.t
+  val catch_lwt : (unit -> 'a Lwt.t) -> (t -> 'a Lwt.t) -> 'a Lwt.t
+  val catch : (unit -> 'a) -> (t -> 'a) -> 'a
 end
 
 type t

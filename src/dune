@@ -5,6 +5,7 @@
  (no_dynlink)
  (libraries
   unix
+  lwt_eio
   lwt.unix
   irmin.unix
   irmin-fs.unix

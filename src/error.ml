@@ -20,14 +20,14 @@ let handle_error f = function
   | Wasmstore error -> f error
   | e -> f (`Exception e)
 
-let unwrap' = function Ok x -> x | Error e -> raise (Wasmstore e)
-let wrap' f = try Ok (f ()) with e -> handle_error Result.error e
+let unwrap = function Ok x -> x | Error e -> raise (Wasmstore e)
+let wrap f = try Ok (f ()) with e -> handle_error Result.error e
 
-let unwrap x =
+let unwrap_lwt x =
   let* x = x in
-  Lwt.return (unwrap' x)
+  Lwt.return (unwrap x)
 
-let wrap f =
+let wrap_lwt f =
   Lwt.catch
     (fun () ->
       let* x = f () in
@@ -35,7 +35,7 @@ let wrap f =
     (handle_error Lwt.return_error)
 
 let throw e = raise (Wasmstore e)
-let mk' f = try f () with e -> handle_error throw e
-let mk f = Lwt.catch f (handle_error throw)
-let catch' f g = try f () with e -> handle_error g e
-let catch f g = Lwt.catch f (handle_error g)
+let mk f = try f () with e -> handle_error throw e
+let mk_lwt f = Lwt.catch f (handle_error throw)
+let catch f g = try f () with e -> handle_error g e
+let catch_lwt f g = Lwt.catch f (handle_error g)

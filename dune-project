@@ -27,6 +27,8 @@
    irmin-fs
    irmin-watcher
    lwt
+   lwt_eio
+   eio_main
    cohttp-lwt-unix
    fmt
    logs
