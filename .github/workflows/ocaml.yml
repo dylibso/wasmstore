@@ -43,7 +43,7 @@ jobs:
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: '${{ matrix.ocaml-compiler }}'
-      - run: opam install update 
+      - run: opam update 
       - run: opam upgrade -y
       - run: opam install . --deps-only -y
       - name: 'Run OCaml tests'
