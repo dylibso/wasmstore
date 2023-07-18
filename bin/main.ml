@@ -4,9 +4,12 @@ open Cmdliner
 open Util
 
 let ( // ) = Filename.concat
+let null_formatter = Format.make_formatter (fun _ _ _ -> ()) (fun () -> ())
 
 let reporter ppf =
   let report src level ~over k msgf =
+    let name = Logs.Src.name src in
+    let ppf = if name = "eio_linux" then null_formatter else ppf in
     let k _ =
       over ();
       k ()
@@ -16,7 +19,7 @@ let reporter ppf =
         ("%a[%a]: " ^^ fmt ^^ "\n%!")
         Logs_fmt.pp_header (level, header)
         Fmt.(styled `Magenta string)
-        (Logs.Src.name src)
+        name
     in
     msgf @@ fun ?header ?tags fmt -> with_metadata header tags k ppf fmt
   in

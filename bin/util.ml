@@ -38,4 +38,6 @@ let run f =
   Lwt_eio.run_lwt @@ fun () ->
   Error.catch_lwt
     (fun () -> f)
-    (fun err -> Logs.err (fun l -> l "%s" (Error.to_string err)); Lwt.return_unit)
+    (fun err ->
+      Logs.err (fun l -> l "%s" (Error.to_string err));
+      Lwt.return_unit)
