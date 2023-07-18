@@ -20,9 +20,9 @@ let info t = Info.v ~author:t.author
 let hash_or_path ~hash ~path = function
   | [ hash_or_path ] -> (
       match Irmin.Type.of_string Store.Hash.t hash_or_path with
-      | Ok x -> Error.mk @@ fun () -> hash x
-      | Error _ -> Error.mk @@ fun () -> path [ hash_or_path ])
-  | x -> Error.mk @@ fun () -> path x
+      | Ok x -> Error.mk_lwt @@ fun () -> hash x
+      | Error _ -> Error.mk_lwt @@ fun () -> path [ hash_or_path ])
+  | x -> Error.mk_lwt @@ fun () -> path x
 
 let root t =
   let conf = Store.Repo.config (repo t) in
@@ -54,7 +54,7 @@ let snapshot { db; _ } = Store.Head.get db
 
 let restore t ?path commit =
   match path with
-  | None | Some [] -> Error.mk @@ fun () -> Store.Head.set t.db commit
+  | None | Some [] -> Error.mk_lwt @@ fun () -> Store.Head.set t.db commit
   | Some path ->
       let info = info t "Restore %a" (Irmin.Type.pp Store.Path.t) path in
       let parents = Store.Commit.parents commit in
@@ -62,7 +62,7 @@ let restore t ?path commit =
         Lwt_list.filter_map_s (Store.Commit.of_key (Store.repo t.db)) parents
       in
       let tree = Store.Commit.tree commit in
-      Error.mk @@ fun () ->
+      Error.mk_lwt @@ fun () ->
       Store.with_tree_exn ~parents ~info t.db path (fun _ ->
           Store.Tree.find_tree tree path)
 
@@ -74,7 +74,7 @@ let rollback t ?(path = []) n : unit Lwt.t =
   | commit :: _ :: _ -> restore t ~path commit
   | [ _ ] | [] ->
       let info = info t "Rollback %a" Irmin.Type.(pp Store.Path.t) path in
-      Error.mk @@ fun () ->
+      Error.mk_lwt @@ fun () ->
       Store.with_tree_exn ~info t.db path (fun _ -> Lwt.return_none)
 
 let path_of_hash hash =
@@ -140,7 +140,7 @@ let add t path wasm =
   let () = verify_string wasm in
   let info = info t "Add %a" (Irmin.Type.pp Store.Path.t) path in
   let f hash =
-    Error.mk @@ fun () ->
+    Error.mk_lwt @@ fun () ->
     Store.set_exn t.db [ Irmin.Type.to_string Store.Hash.t hash ] wasm ~info
   in
   let+ () =
@@ -153,7 +153,7 @@ let add t path wasm =
             Store.Backend.Repo.batch (repo t) (fun contents _ _ ->
                 let+ _ = Store.save_contents contents wasm in
                 ())
-        | _ -> Error.mk @@ fun () -> Store.set_exn t.db path wasm ~info)
+        | _ -> Error.mk_lwt @@ fun () -> Store.set_exn t.db path wasm ~info)
       path
   in
   Store.Contents.hash wasm
@@ -204,7 +204,7 @@ let remove t path =
     in
     let* tree = Store.tree t.db in
     let* tree = aux tree [] in
-    Error.mk @@ fun () ->
+    Error.mk_lwt @@ fun () ->
     Store.test_and_set_tree_exn t.db path ~test:(Some tree) ~set:(Some tree)
       ~info
   in
