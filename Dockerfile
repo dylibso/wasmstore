@@ -12,7 +12,9 @@ COPY --chown=opam --from=rust /usr/local/cargo/bin/rustc /usr/local/bin/rustc
 RUN sudo ln -sf /home/opam/.cargo/bin/cargo /usr/bin/cargo
 RUN sudo ln -sf /home/opam/.cargo/bin/rustc /usr/bin/rustc
 WORKDIR /home/opam/src
-RUN opam install opam-monorepo -y
+RUN opam repository add opam-repository git+https://github.com/ocaml/opam-repository.git
+RUN opam update -y
+RUN opam install dune opam-monorepo -y
 RUN opam repository add dune-universe git+https://github.com/dune-universe/opam-overlays.git
 RUN opam monorepo pull
 RUN eval $(opam env) && dune build ./bin/main.exe
