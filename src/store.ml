@@ -6,7 +6,13 @@ module Store = Irmin_fs_unix.Make (Schema)
 module Info = Irmin_unix.Info (Store.Info)
 module Hash = Store.Hash
 
-type t = { mutable db : Store.t; mutable branch : string; author : string }
+type t = {
+  mutable db : Store.t;
+  env : Eio_unix.Stdenv.base;
+  mutable branch : string;
+  author : string;
+}
+
 type hash = Store.Hash.t
 
 let store { db; _ } = db
@@ -31,14 +37,14 @@ let root t =
 let try_mkdir ?(mode = 0o755) path =
   Lwt.catch (fun () -> Lwt_unix.mkdir path mode) (fun _ -> Lwt.return_unit)
 
-let v ?(author = "wasmstore") ?(branch = Store.Branch.main) root =
+let v ?(author = "wasmstore") ?(branch = Store.Branch.main) root ~env =
   let* () = try_mkdir root in
   let config = Irmin_fs.config root in
   let* repo = Store.Repo.v config in
   let* db = Store.of_branch repo branch in
   let* () = try_mkdir (root // "tmp") in
   let* () = try_mkdir (root // "objects") in
-  Lwt.return { db; branch; author }
+  Lwt.return { db; branch; author; env }
 
 let verify_string wasm =
   match Rust.verify_string wasm with

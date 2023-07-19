@@ -37,7 +37,7 @@ let run f =
   Lwt_eio.with_event_loop ~clock:env#clock @@ fun _token ->
   Lwt_eio.run_lwt @@ fun () ->
   Error.catch_lwt
-    (fun () -> f)
+    (fun () -> f env)
     (fun err ->
       Logs.err (fun l -> l "%s" (Error.to_string err));
       Lwt.return_unit)

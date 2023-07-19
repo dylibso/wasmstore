@@ -47,7 +47,7 @@ val store : t -> Store.t
 val repo : t -> Store.repo
 (** [repo t] returns the underlying irmin repo *)
 
-val v : ?author:string -> ?branch:string -> string -> t Lwt.t
+val v : ?author:string -> ?branch:string -> string -> env:Eio_unix.Stdenv.base -> t Lwt.t
 (** [v ~branch root] opens a store open to [branch] on disk at [root] *)
 
 val snapshot : t -> Store.commit Lwt.t
