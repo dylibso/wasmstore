@@ -52,13 +52,19 @@ fn validate(mut reader: impl Read) -> Result<(), String> {
     Ok(())
 }
 
-fn return_string(s: String) -> *mut u8 {
-    std::ffi::CString::new(s).unwrap().into_raw() as *mut u8
+fn return_string(mut s: String) -> *mut u8 {
+    s.push('\0');
+    s.shrink_to_fit();
+    let ptr = s.as_ptr();
+    std::mem::forget(s);
+    ptr as *mut _
 }
 
 #[no_mangle]
 pub unsafe fn wasm_error_free(s: *mut u8) {
-    drop(std::ffi::CString::from_raw(s as *mut _))
+    let len = std::ffi::CStr::from_ptr(s as *const _).to_bytes().len() + 1;
+    let s = String::from_raw_parts(s, len, len);
+    drop(s)
 }
 
 #[no_mangle]

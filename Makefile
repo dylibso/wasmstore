@@ -10,6 +10,10 @@ RELEASE_DIR=wasmstore-$(UNAME_M)-$(UNAME_S)-$(VERSION)
 build:
 	dune build
 
+clean:
+	cargo clean
+	dune clean
+
 install:
 	mkdir -p $(PREFIX)/bin
 	cp _build/default/bin/main.exe $(PREFIX)/bin/wasmstore
