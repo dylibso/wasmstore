@@ -384,7 +384,9 @@ let server =
     in
     let* t = store in
     try Server.run ~cors ?tls:tls' ?host ?port ?auth t
-    with _ -> cmd store host port auth cors tls
+    with exn ->
+      Logs.err (fun l -> l "Server.run: %s" @@ Printexc.to_string exn);
+      cmd store host port auth cors tls
   in
   let cmd store host port auth cors tls =
     run (cmd store host port auth cors tls)
