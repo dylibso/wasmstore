@@ -25,6 +25,8 @@ depends: [
   "websocket"
   "cmdliner"
   "yojson"
+  "ctypes"
+  "ctypes-foreign"
   "conf-rust-2021"
   "odoc" {with-doc}
 ]

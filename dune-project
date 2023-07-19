@@ -35,6 +35,8 @@
    websocket
    cmdliner
    yojson
+   ctypes
+   ctypes-foreign
    conf-rust-2021)
  (tags
   (topics wasm database irmin)))

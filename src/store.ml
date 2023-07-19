@@ -41,12 +41,12 @@ let v ?(author = "wasmstore") ?(branch = Store.Branch.main) root =
   Lwt.return { db; branch; author }
 
 let verify_string wasm =
-  match Rust.wasm_verify_string wasm with
+  match Rust.verify_string wasm with
   | None -> ()
   | Some e -> raise (Validation_error e)
 
 let verify_file filename =
-  match Rust.wasm_verify_file filename with
+  match Rust.verify_file filename with
   | None -> ()
   | Some e -> raise (Validation_error e)
 

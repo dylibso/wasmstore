@@ -52,25 +52,51 @@ fn validate(mut reader: impl Read) -> Result<(), String> {
     Ok(())
 }
 
-#[ocaml::func]
-#[ocaml::sig("string -> string option")]
-pub unsafe fn wasm_verify_file(filename: &str) -> Option<String> {
-    let file = match std::fs::File::open(filename) {
-        Ok(f) => f,
-        Err(_) => return Some(format!("unable to open file {}", filename)),
-    };
+unsafe fn wasm_error_length(s: *mut u8) -> usize {
+    std::ffi::CStr::from_ptr(s as *const _)
+        .to_str()
+        .unwrap()
+        .len()
+}
 
-    match validate(file) {
-        Ok(()) => None,
-        Err(s) => return Some(s),
+fn return_string(mut s: String) -> *mut u8 {
+    s.push('\0');
+    s.shrink_to_fit();
+    let ptr = s.as_mut_ptr();
+    std::mem::forget(s);
+    ptr
+}
+
+#[no_mangle]
+pub unsafe fn wasm_error_free(s: *mut u8) {
+    let len = wasm_error_length(s);
+    let s = String::from_raw_parts(s as *mut _, len, len);
+    drop(s)
+}
+
+#[no_mangle]
+pub unsafe fn wasm_verify_file(filename: *const u8, len: usize) -> *mut u8 {
+    let slice = std::slice::from_raw_parts(filename, len);
+    if let Ok(s) = std::str::from_utf8(slice) {
+        let file = match std::fs::File::open(s) {
+            Ok(f) => f,
+            Err(_) => return return_string(format!("unable to open file {}", s)),
+        };
+
+        match validate(file) {
+            Ok(()) => std::ptr::null_mut(),
+            Err(e) => return_string(format!("{}", e)),
+        }
+    } else {
+        std::ptr::null_mut()
     }
 }
 
-#[ocaml::func]
-#[ocaml::sig("string -> string option")]
-pub unsafe fn wasm_verify_string(data: &[u8]) -> Option<String> {
-    match validate(data) {
-        Ok(()) => None,
-        Err(s) => return Some(s),
+#[no_mangle]
+pub unsafe fn wasm_verify_string(filename: *const u8, len: usize) -> *mut u8 {
+    let slice = std::slice::from_raw_parts(filename, len);
+    match validate(slice) {
+        Ok(()) => std::ptr::null_mut(),
+        Err(s) => return_string(s),
     }
 }
