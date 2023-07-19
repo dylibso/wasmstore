@@ -5,16 +5,16 @@ open Util
 
 let ( // ) = Filename.concat
 let null_formatter = Format.make_formatter (fun _ _ _ -> ()) (fun () -> ())
+let eio_linux_src = "eio_linux"
+let string_of_level = Fmt.to_to_string Logs.pp_level
+let warning_level = string_of_level Logs.Warning
 
 let reporter ppf =
   let report src level ~over k msgf =
     let name = Logs.Src.name src in
     let ppf =
-      if
-        name = "eio_linux"
-        && Logs.level_to_string (Some level)
-           = Logs.level_to_string (Some Logs.Warning)
-      then null_formatter
+      if name = eio_linux_src && string_of_level level = warning_level then
+        null_formatter
       else ppf
     in
     let k _ =
