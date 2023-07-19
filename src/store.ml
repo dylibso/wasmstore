@@ -42,13 +42,13 @@ let v ?(author = "wasmstore") ?(branch = Store.Branch.main) root =
 
 let verify_string wasm =
   match Rust.verify_string wasm with
-  | None -> ()
-  | Some e -> raise (Validation_error e)
+  | Ok () -> ()
+  | Error (`Msg e) -> raise (Validation_error e)
 
 let verify_file filename =
   match Rust.verify_file filename with
-  | None -> ()
-  | Some e -> raise (Validation_error e)
+  | Ok () -> ()
+  | Error (`Msg e) -> raise (Validation_error e)
 
 let snapshot { db; _ } = Store.Head.get db
 
