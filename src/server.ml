@@ -30,7 +30,7 @@ let list_modules t ~headers path =
   response @@ Server.respond_string ~status:`OK ~headers ~body ()
 
 let list_branches t ~headers =
-  let* branches = Branch.list t in
+  let branches = Branch.list t in
   let body =
     Body.of_string (Irmin.Type.(to_json_string (list string)) branches)
   in
@@ -247,10 +247,10 @@ let v1 t ~headers ~body ~req = function
       let* () = Body.drain_body body in
       list_branches t ~headers
   | `PUT, `V1 [ "branch"; branch ] ->
-      let* () = Branch.switch t branch in
+      let () = Branch.switch t branch in
       response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
   | `POST, `V1 [ "branch"; branch ] -> (
-      let* res = Branch.create t branch in
+      let res = Branch.create t branch in
       match res with
       | Ok _ ->
           response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
@@ -258,7 +258,7 @@ let v1 t ~headers ~body ~req = function
           response
           @@ Server.respond_string ~headers ~status:`Conflict ~body:s ())
   | `DELETE, `V1 [ "branch"; branch ] ->
-      let* () = Branch.delete t branch in
+      let () = Branch.delete t branch in
       response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
   | `GET, `V1 [ "branch" ] ->
       response @@ Server.respond_string ~headers ~status:`OK ~body:t.branch ()

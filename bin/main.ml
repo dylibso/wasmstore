@@ -398,14 +398,14 @@ let server =
 let branch =
   let cmd () root branch_name delete list =
     run @@ fun env ->
-    let* t = v root ~env in
+    let+ t = v root ~env in
     if list then
-      let+ branches = Branch.list t in
+      let branches = Branch.list t in
       List.iter print_endline branches
     else if delete then Branch.delete t branch_name
     else
-      let* _ = Error.unwrap_lwt @@ Branch.create t branch_name in
-      Lwt.return_unit
+      let _ = Error.unwrap @@ Branch.create t branch_name in
+      ()
   in
   let doc = "Modify a branch" in
   let info = Cmd.info "branch" ~doc in

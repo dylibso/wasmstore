@@ -137,17 +137,17 @@ end
 val commit_info : t -> hash -> Commit_info.t option Lwt.t
 
 module Branch : sig
-  val switch : t -> string -> unit Lwt.t
+  val switch : t -> string -> unit
   (** [switch t branch] sets [t]'s branch to [branch] *)
 
-  val create : t -> string -> t Error.res Lwt.t
+  val create : t -> string -> t Error.res
   (** [create t branch] creates a new branch, returning an error result if the
       branch already exists *)
 
-  val delete : t -> string -> unit Lwt.t
+  val delete : t -> string -> unit
   (** [delete t branch] destroys [branch] *)
 
-  val list : t -> string list Lwt.t
+  val list : t -> string list
   (** [list t] returns a list of all branches *)
 end
 
