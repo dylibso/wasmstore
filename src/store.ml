@@ -8,7 +8,7 @@ module Hash = Store.Hash
 
 type t = {
   mutable db : Store.t;
-  env : Eio_unix.Stdenv.base;
+  env : Eio.Stdenv.t;
   mutable branch : string;
   author : string;
 }
@@ -34,7 +34,7 @@ let root t =
   let conf = Store.Repo.config (repo t) in
   Irmin.Backend.Conf.get conf Irmin_fs.Conf.Key.root
 
-let try_mkdir ?(mode = 0o755) (path : string) ~(env : Eio_unix.Stdenv.base) =
+let try_mkdir ?(mode = 0o755) (path : string) ~(env : Eio.Stdenv.t) =
   Lwt_eio.run_eio @@ fun () ->
   let path = Eio.Path.(Eio.Stdenv.fs env / path) in
   match Eio.Path.mkdir ~perm:mode path with (exception _) | () -> ()
