@@ -27,12 +27,16 @@
    irmin-fs
    irmin-watcher
    lwt
+   lwt_eio
+   eio_main
    cohttp-lwt-unix
    fmt
    logs
    websocket
    cmdliner
    yojson
+   ctypes
+   ctypes-foreign
    conf-rust-2021)
  (tags
   (topics wasm database irmin)))

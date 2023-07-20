@@ -6,7 +6,13 @@ module Store = Irmin_fs_unix.Make (Schema)
 module Info = Irmin_unix.Info (Store.Info)
 module Hash = Store.Hash
 
-type t = { mutable db : Store.t; mutable branch : string; author : string }
+type t = {
+  mutable db : Store.t;
+  env : Eio_unix.Stdenv.base;
+  mutable branch : string;
+  author : string;
+}
+
 type hash = Store.Hash.t
 
 let store { db; _ } = db
@@ -20,9 +26,9 @@ let info t = Info.v ~author:t.author
 let hash_or_path ~hash ~path = function
   | [ hash_or_path ] -> (
       match Irmin.Type.of_string Store.Hash.t hash_or_path with
-      | Ok x -> Error.mk @@ fun () -> hash x
-      | Error _ -> Error.mk @@ fun () -> path [ hash_or_path ])
-  | x -> Error.mk @@ fun () -> path x
+      | Ok x -> Error.mk_lwt @@ fun () -> hash x
+      | Error _ -> Error.mk_lwt @@ fun () -> path [ hash_or_path ])
+  | x -> Error.mk_lwt @@ fun () -> path x
 
 let root t =
   let conf = Store.Repo.config (repo t) in
@@ -31,30 +37,30 @@ let root t =
 let try_mkdir ?(mode = 0o755) path =
   Lwt.catch (fun () -> Lwt_unix.mkdir path mode) (fun _ -> Lwt.return_unit)
 
-let v ?(author = "wasmstore") ?(branch = Store.Branch.main) root =
+let v ?(author = "wasmstore") ?(branch = Store.Branch.main) root ~env =
   let* () = try_mkdir root in
   let config = Irmin_fs.config root in
   let* repo = Store.Repo.v config in
   let* db = Store.of_branch repo branch in
   let* () = try_mkdir (root // "tmp") in
   let* () = try_mkdir (root // "objects") in
-  Lwt.return { db; branch; author }
+  Lwt.return { db; branch; author; env }
 
 let verify_string wasm =
-  match Rust.wasm_verify_string wasm with
-  | None -> ()
-  | Some e -> raise (Validation_error e)
+  match Rust.verify_string wasm with
+  | Ok () -> ()
+  | Error (`Msg e) -> raise (Validation_error e)
 
 let verify_file filename =
-  match Rust.wasm_verify_file filename with
-  | None -> ()
-  | Some e -> raise (Validation_error e)
+  match Rust.verify_file filename with
+  | Ok () -> ()
+  | Error (`Msg e) -> raise (Validation_error e)
 
 let snapshot { db; _ } = Store.Head.get db
 
 let restore t ?path commit =
   match path with
-  | None | Some [] -> Error.mk @@ fun () -> Store.Head.set t.db commit
+  | None | Some [] -> Error.mk_lwt @@ fun () -> Store.Head.set t.db commit
   | Some path ->
       let info = info t "Restore %a" (Irmin.Type.pp Store.Path.t) path in
       let parents = Store.Commit.parents commit in
@@ -62,7 +68,7 @@ let restore t ?path commit =
         Lwt_list.filter_map_s (Store.Commit.of_key (Store.repo t.db)) parents
       in
       let tree = Store.Commit.tree commit in
-      Error.mk @@ fun () ->
+      Error.mk_lwt @@ fun () ->
       Store.with_tree_exn ~parents ~info t.db path (fun _ ->
           Store.Tree.find_tree tree path)
 
@@ -74,7 +80,7 @@ let rollback t ?(path = []) n : unit Lwt.t =
   | commit :: _ :: _ -> restore t ~path commit
   | [ _ ] | [] ->
       let info = info t "Rollback %a" Irmin.Type.(pp Store.Path.t) path in
-      Error.mk @@ fun () ->
+      Error.mk_lwt @@ fun () ->
       Store.with_tree_exn ~info t.db path (fun _ -> Lwt.return_none)
 
 let path_of_hash hash =
@@ -140,7 +146,7 @@ let add t path wasm =
   let () = verify_string wasm in
   let info = info t "Add %a" (Irmin.Type.pp Store.Path.t) path in
   let f hash =
-    Error.mk @@ fun () ->
+    Error.mk_lwt @@ fun () ->
     Store.set_exn t.db [ Irmin.Type.to_string Store.Hash.t hash ] wasm ~info
   in
   let+ () =
@@ -153,7 +159,7 @@ let add t path wasm =
             Store.Backend.Repo.batch (repo t) (fun contents _ _ ->
                 let+ _ = Store.save_contents contents wasm in
                 ())
-        | _ -> Error.mk @@ fun () -> Store.set_exn t.db path wasm ~info)
+        | _ -> Error.mk_lwt @@ fun () -> Store.set_exn t.db path wasm ~info)
       path
   in
   Store.Contents.hash wasm
@@ -204,7 +210,7 @@ let remove t path =
     in
     let* tree = Store.tree t.db in
     let* tree = aux tree [] in
-    Error.mk @@ fun () ->
+    Error.mk_lwt @@ fun () ->
     Store.test_and_set_tree_exn t.db path ~test:(Some tree) ~set:(Some tree)
       ~info
   in

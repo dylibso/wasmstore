@@ -33,9 +33,11 @@ let convert_date timestamp =
     date.tm_mday date.tm_hour date.tm_min date.tm_sec (date.tm_year + 1900)
 
 let run f =
-  Error.catch
-    (fun () -> f)
+  Eio_main.run @@ fun env ->
+  Lwt_eio.with_event_loop ~clock:env#clock @@ fun _token ->
+  Lwt_eio.run_lwt @@ fun () ->
+  Error.catch_lwt
+    (fun () -> f env)
     (fun err ->
       Logs.err (fun l -> l "%s" (Error.to_string err));
       Lwt.return_unit)
-  |> Lwt_main.run

@@ -20,13 +20,13 @@ module Error : sig
   exception Wasmstore of t
 
   val to_string : t -> string
-  val unwrap' : ('a, t) result -> 'a
-  val unwrap : ('a, t) result Lwt.t -> 'a Lwt.t
-  val wrap' : (unit -> 'a) -> ('a, t) result
-  val wrap : (unit -> 'a Lwt.t) -> ('a, t) result Lwt.t
+  val unwrap : ('a, t) result -> 'a
+  val unwrap_lwt : ('a, t) result Lwt.t -> 'a Lwt.t
+  val wrap : (unit -> 'a) -> ('a, t) result
+  val wrap_lwt : (unit -> 'a Lwt.t) -> ('a, t) result Lwt.t
   val throw : t -> 'a
-  val catch' : (unit -> 'a) -> (t -> 'a) -> 'a
-  val catch : (unit -> 'a Lwt.t) -> (t -> 'a Lwt.t) -> 'a Lwt.t
+  val catch_lwt : (unit -> 'a Lwt.t) -> (t -> 'a Lwt.t) -> 'a Lwt.t
+  val catch : (unit -> 'a) -> (t -> 'a) -> 'a
 end
 
 type t
@@ -47,7 +47,7 @@ val store : t -> Store.t
 val repo : t -> Store.repo
 (** [repo t] returns the underlying irmin repo *)
 
-val v : ?author:string -> ?branch:string -> string -> t Lwt.t
+val v : ?author:string -> ?branch:string -> string -> env:Eio_unix.Stdenv.base -> t Lwt.t
 (** [v ~branch root] opens a store open to [branch] on disk at [root] *)
 
 val snapshot : t -> Store.commit Lwt.t
