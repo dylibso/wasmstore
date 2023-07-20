@@ -34,16 +34,18 @@ let root t =
   let conf = Store.Repo.config (repo t) in
   Irmin.Backend.Conf.get conf Irmin_fs.Conf.Key.root
 
-let try_mkdir ?(mode = 0o755) path =
-  Lwt.catch (fun () -> Lwt_unix.mkdir path mode) (fun _ -> Lwt.return_unit)
+let try_mkdir ?(mode = 0o755) (path : string) ~(env : Eio_unix.Stdenv.base) =
+  Lwt_eio.run_eio @@ fun () ->
+  let path = Eio.Path.(Eio.Stdenv.fs env / path) in
+  match Eio.Path.mkdir ~perm:mode path with (exception _) | () -> ()
 
 let v ?(author = "wasmstore") ?(branch = Store.Branch.main) root ~env =
-  let* () = try_mkdir root in
+  let* () = try_mkdir root ~env in
   let config = Irmin_fs.config root in
   let* repo = Store.Repo.v config in
   let* db = Store.of_branch repo branch in
-  let* () = try_mkdir (root // "tmp") in
-  let* () = try_mkdir (root // "objects") in
+  let* () = try_mkdir (root // "tmp") ~env in
+  let* () = try_mkdir (root // "objects") ~env in
   Lwt.return { db; branch; author; env }
 
 let verify_string wasm =
@@ -135,7 +137,7 @@ let import t path stream =
           Unix.unlink tmp;
           raise e
       in
-      let* () = try_mkdir (Filename.dirname dest) in
+      let* () = try_mkdir (Filename.dirname dest) ~env:t.env in
       Lwt_unix.rename tmp dest
     else Lwt.return_unit
   in
