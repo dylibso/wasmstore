@@ -47,17 +47,17 @@ val store : t -> Store.t
 val repo : t -> Store.repo
 (** [repo t] returns the underlying irmin repo *)
 
-val v : ?author:string -> ?branch:string -> string -> env:Eio.Stdenv.t-> t Lwt.t
+val v : ?author:string -> ?branch:string -> string -> env:Eio.Stdenv.t -> t
 (** [v ~branch root] opens a store open to [branch] on disk at [root] *)
 
-val snapshot : t -> Store.commit Lwt.t
+val snapshot : t -> Store.commit
 (** [snapshot t] gets the current head commit *)
 
-val restore : t -> ?path:string list -> Store.commit -> unit Lwt.t
+val restore : t -> ?path:string list -> Store.commit -> unit
 (** [restore t commit] sets the head commit, if [path] is provided then only the specfied path
     will be reverted *)
 
-val rollback : t -> ?path:string list -> int -> unit Lwt.t
+val rollback : t -> ?path:string list -> int -> unit
 (** [rollback t n] sets the head commit to [n] commits in the past, if [path] is provided then only the specfied 
     path will be reverted *)
 
@@ -83,7 +83,7 @@ val hash : t -> string list -> hash option Lwt.t
 val remove : t -> string list -> unit Lwt.t
 (** [remove t path] deletes [path] *)
 
-val list : t -> string list -> (string list * hash) list Lwt.t
+val list : t -> string list -> (string list * hash) list
 (** [list t path] returns a list of modules stored under [path]. This function does not accept
     a hash parameter in place of [path] *)
 
@@ -99,11 +99,14 @@ val gc : t -> int Lwt.t
     the garbage collector may purge prior commits, potentially causing `restore`
     to fail. *)
 
-val get_hash_and_filename : t -> string list -> (hash * string) option Lwt.t
-(** [get_hash_and_filename t path] returns a tuple containing the hash and the filename
+val hash_and_filename_of_path : t -> string list -> (hash * string) option Lwt.t
+(** [hash_and_filename_of_path t path] returns a tuple containing the hash and the filename
     of the object disk relative to the root path *)
 
-val merge : t -> string -> (unit, Irmin.Merge.conflict) result Lwt.t
+val hash_of_path : t -> string list -> hash option Lwt.t
+(** [hash_of_path t path] returns the hash of a path if it exists in the database *)
+
+val merge : t -> string -> (unit, Irmin.Merge.conflict) result
 (** [merge t branch] merges [branch] into [t] *)
 
 val with_branch : t -> string -> t

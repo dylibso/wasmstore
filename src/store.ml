@@ -1,4 +1,5 @@
 open Lwt.Syntax
+open Syntax
 
 let ( // ) = Filename.concat
 
@@ -40,13 +41,13 @@ let try_mkdir ?(mode = 0o755) (path : string) ~(env : Eio.Stdenv.t) =
   match Eio.Path.mkdir ~perm:mode path with (exception _) | () -> ()
 
 let v ?(author = "wasmstore") ?(branch = Store.Branch.main) root ~env =
-  let* () = try_mkdir root ~env in
+  let$ () = try_mkdir root ~env in
   let config = Irmin_fs.config root in
-  let* repo = Store.Repo.v config in
-  let* db = Store.of_branch repo branch in
-  let* () = try_mkdir (root // "tmp") ~env in
-  let* () = try_mkdir (root // "objects") ~env in
-  Lwt.return { db; branch; author; env }
+  let$ repo = Store.Repo.v config in
+  let$ db = Store.of_branch repo branch in
+  let$ () = try_mkdir (root // "tmp") ~env in
+  let$ () = try_mkdir (root // "objects") ~env in
+  { db; branch; author; env }
 
 let verify_string wasm =
   match Rust.verify_string wasm with
@@ -58,31 +59,38 @@ let verify_file filename =
   | Ok () -> ()
   | Error (`Msg e) -> raise (Validation_error e)
 
-let snapshot { db; _ } = Store.Head.get db
+let snapshot { db; _ } = Lwt_eio.run_lwt @@ fun () -> Store.Head.get db
 
 let restore t ?path commit =
   match path with
-  | None | Some [] -> Error.mk_lwt @@ fun () -> Store.Head.set t.db commit
+  | None | Some [] ->
+      Error.mk @@ fun () ->
+      Lwt_eio.run_lwt @@ fun () -> Store.Head.set t.db commit
   | Some path ->
       let info = info t "Restore %a" (Irmin.Type.pp Store.Path.t) path in
       let parents = Store.Commit.parents commit in
-      let* parents =
-        Lwt_list.filter_map_s (Store.Commit.of_key (Store.repo t.db)) parents
+      let parents =
+        List.filter_map
+          (fun x ->
+            Lwt_eio.run_lwt @@ fun () -> Store.Commit.of_key (Store.repo t.db) x)
+          parents
       in
       let tree = Store.Commit.tree commit in
-      Error.mk_lwt @@ fun () ->
+      Error.mk @@ fun () ->
+      Lwt_eio.run_lwt @@ fun () ->
       Store.with_tree_exn ~parents ~info t.db path (fun _ ->
           Store.Tree.find_tree tree path)
 
 let tree_opt_equal = Irmin.Type.(unstage (equal (option Store.Tree.t)))
 
-let rollback t ?(path = []) n : unit Lwt.t =
-  let* lm = Store.last_modified ~n:(n + 1) t.db path in
+let rollback t ?(path = []) n : unit =
+  let$ lm = Store.last_modified ~n:(n + 1) t.db path in
   match List.rev lm with
   | commit :: _ :: _ -> restore t ~path commit
   | [ _ ] | [] ->
       let info = info t "Rollback %a" Irmin.Type.(pp Store.Path.t) path in
-      Error.mk_lwt @@ fun () ->
+      Error.mk @@ fun () ->
+      Lwt_eio.run_lwt @@ fun () ->
       Store.with_tree_exn ~info t.db path (fun _ -> Lwt.return_none)
 
 let path_of_hash hash =
@@ -91,13 +99,16 @@ let path_of_hash hash =
   let b = String.sub hash' 2 (String.length hash' - 2) in
   "objects" // a // b
 
-let get_hash_and_filename t path =
+let hash_and_filename_of_path t path =
   let* hash = hash_or_path ~hash:Lwt.return_some ~path:(Store.hash t.db) path in
   match hash with
   | None -> Lwt.return_none
   | Some hash ->
       let path = path_of_hash hash in
       Lwt.return_some (hash, path)
+
+let hash_of_path t path =
+  hash_or_path ~hash:Lwt.return_some ~path:(Store.hash t.db) path
 
 let set_path t path hash =
   let* tree = Store.Tree.of_hash (repo t) (`Contents (hash, ())) in
@@ -219,6 +230,7 @@ let remove t path =
   hash_or_path ~path:(Store.remove_exn t.db ~info) ~hash path
 
 let list { db; _ } path =
+  Lwt_eio.run_lwt @@ fun () ->
   let rec aux path =
     let* items = Store.list db path in
     let+ items =
@@ -238,7 +250,7 @@ let list { db; _ } path =
 
 let contains_hash t hash =
   let+ res =
-    get_hash_and_filename t [ Irmin.Type.to_string Store.Hash.t hash ]
+    hash_and_filename_of_path t [ Irmin.Type.to_string Store.Hash.t hash ]
   in
   Option.is_some res
 
@@ -250,7 +262,7 @@ let contains t path =
 
 let merge t branch =
   let info = info t "Merge %s" branch in
-  Store.merge_with_branch t.db ~info branch
+  Lwt_eio.run_lwt @@ fun () -> Store.merge_with_branch t.db ~info branch
 
 let with_branch t branch = { t with branch }
 let with_author t author = { t with author }

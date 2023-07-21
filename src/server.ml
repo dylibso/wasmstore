@@ -18,7 +18,7 @@ let response x =
   `Response x
 
 let list_modules t ~headers path =
-  let* modules = list t path in
+  let modules = list t path in
   let modules =
     List.map
       (fun (k, v) ->
@@ -69,7 +69,7 @@ let set_hash t ~headers hash path =
            ~body:"invalid hash" ()
 
 let find_module t ~headers path =
-  let* filename = get_hash_and_filename t path in
+  let* filename = hash_and_filename_of_path t path in
   match filename with
   | Some (hash, filename) ->
       let headers =
@@ -186,7 +186,7 @@ let v1 t ~headers ~body ~req = function
       let* _ = gc t in
       response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
   | `POST, `V1 [ "merge"; from_branch ] -> (
-      let* res = merge t from_branch in
+      let res = merge t from_branch in
       match res with
       | Ok _ ->
           response @@ Server.respond_string ~status:`OK ~headers ~body:"" ()
@@ -210,14 +210,14 @@ let v1 t ~headers ~body ~req = function
               @@ Server.respond_string ~headers ~status:`Not_found
                    ~body:"commit not found" ()
           | Some commit ->
-              let* () = restore ~path t commit in
+              let () = restore ~path t commit in
               response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
           ))
   | `POST, `V1 ("rollback" :: path) ->
-      let* () = rollback t ~path 1 in
+      let () = rollback t ~path 1 in
       response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
   | `GET, `V1 [ "snapshot" ] ->
-      let* commit = snapshot t in
+      let commit = snapshot t in
       response
       @@ Server.respond_string ~headers ~status:`OK
            ~body:(Irmin.Type.to_string Store.Hash.t (Store.Commit.hash commit))

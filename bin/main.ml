@@ -131,7 +131,7 @@ let store =
 
 let buf_size = 4096
 
-let rec read_file buf ic f =
+let rec read_file buf ic f : unit Lwt.t =
   let* n = Lwt_io.read_into ic buf 0 buf_size in
   f (Some (Bytes.sub_string buf 0 n));
   if n < buf_size then
@@ -139,7 +139,8 @@ let rec read_file buf ic f =
     Lwt.return_unit
   else read_file buf ic f
 
-let file_stream filename =
+let file_stream filename : _ Lwt_stream.t =
+  Lwt_eio.run_lwt @@ fun () ->
   let buf = Bytes.create buf_size in
   let s, push = Lwt_stream.create () in
   let* () =
@@ -147,7 +148,8 @@ let file_stream filename =
   in
   Lwt.return s
 
-let stdin_stream () =
+let stdin_stream () : _ Lwt_stream.t =
+  Lwt_eio.run_lwt @@ fun () ->
   let buf = Bytes.create buf_size in
   let s, push = Lwt_stream.create () in
   let* () = read_file buf Lwt_io.stdin push in
@@ -159,8 +161,8 @@ let add =
       match path with Some p -> p | None -> [ Filename.basename filename ]
     in
     run @@ fun env ->
-    let* t = store env in
-    let* data =
+    let t = store env in
+    let data =
       if filename = "-" then stdin_stream () else file_stream filename
     in
     Lwt.catch
@@ -169,7 +171,8 @@ let add =
         Format.printf "%a\n" (Irmin.Type.pp Store.hash_t) hash)
       (function
         | Validation_error msg ->
-            Lwt_io.fprintlf Lwt_io.stderr "ERROR invalid module: %s" msg
+            Printf.fprintf stderr "ERROR invalid module: %s\n" msg;
+            Lwt.return_unit
         | exn -> raise exn)
   in
 
@@ -181,7 +184,7 @@ let add =
 let find =
   let cmd store path =
     run @@ fun env ->
-    let* t = store env in
+    let t = store env in
     let+ value = find t path in
     match value with None -> exit 1 | Some value -> print_string value
   in
@@ -193,10 +196,10 @@ let find =
 let filename =
   let cmd store path =
     run @@ fun env ->
-    let* t = store env in
+    let t = store env in
     let config = Store.Repo.config (repo t) in
     let root = Irmin.Backend.Conf.find_root config |> Option.get in
-    let* opt = Wasmstore.get_hash_and_filename t path in
+    let* opt = Wasmstore.hash_and_filename_of_path t path in
     match opt with
     | None -> exit 1
     | Some (_, filename) -> Lwt_io.printl (Filename.concat root filename)
@@ -209,7 +212,7 @@ let filename =
 let remove =
   let cmd store path =
     run @@ fun env ->
-    let* t = store env in
+    let t = store env in
     Wasmstore.remove t path
   in
   let doc = "remove WASM module from store by hash" in
@@ -219,9 +222,9 @@ let remove =
 
 let merge =
   let cmd store branch_from =
-    run @@ fun env ->
-    let* t = store env in
-    let+ res = merge t branch_from in
+    run' @@ fun env ->
+    let t = store env in
+    let res = merge t branch_from in
     match res with
     | Ok () -> ()
     | Error e ->
@@ -238,7 +241,7 @@ let merge =
 let gc =
   let cmd store =
     run @@ fun env ->
-    let* t = store env in
+    let t = store env in
     let+ res = gc t in
     Printf.printf "%d\n" res
   in
@@ -249,9 +252,9 @@ let gc =
 
 let list =
   let cmd store path =
-    run @@ fun env ->
-    let* t = store env in
-    let+ items = list t path in
+    run' @@ fun env ->
+    let t = store env in
+    let items = list t path in
     List.iter
       (fun (path, hash) ->
         Format.printf "%a\t%a\n"
@@ -268,9 +271,9 @@ let list =
 
 let snapshot =
   let cmd store =
-    run @@ fun env ->
-    let* t = store env in
-    let+ head = snapshot t in
+    run' @@ fun env ->
+    let t = store env in
+    let head = snapshot t in
     print_endline (Irmin.Type.to_string Store.Hash.t (Store.Commit.hash head))
   in
   let doc = "get current head commit hash" in
@@ -280,19 +283,17 @@ let snapshot =
 
 let restore =
   let cmd store commit path =
-    run @@ fun env ->
-    let* t = store env in
+    run' @@ fun env ->
+    let t = store env in
     let hash = Irmin.Type.of_string Store.Hash.t commit in
     match hash with
-    | Error _ ->
-        Printf.fprintf stderr "ERROR invalid hash\n";
-        Lwt.return_unit
+    | Error _ -> Printf.fprintf stderr "ERROR invalid hash\n"
     | Ok hash -> (
-        let* commit = Store.Commit.of_hash (repo t) hash in
+        let commit =
+          Lwt_eio.run_lwt @@ fun () -> Store.Commit.of_hash (repo t) hash
+        in
         match commit with
-        | None ->
-            Printf.fprintf stderr "ERROR invalid commit\n";
-            Lwt.return_unit
+        | None -> Printf.fprintf stderr "ERROR invalid commit\n"
         | Some commit -> restore ?path t commit)
   in
   let doc = "restore to a previous commit" in
@@ -302,8 +303,8 @@ let restore =
 
 let rollback =
   let cmd store path =
-    run @@ fun env ->
-    let* t = store env in
+    run' @@ fun env ->
+    let t = store env in
     rollback ?path t 1
   in
   let doc = "rollback to the last commit" in
@@ -314,7 +315,7 @@ let rollback =
 let contains =
   let cmd store path =
     run @@ fun env ->
-    let* t = store env in
+    let t = store env in
     let+ value = contains t path in
     Format.printf "%b\n" value
   in
@@ -326,7 +327,7 @@ let contains =
 let set =
   let cmd store hash path =
     run @@ fun env ->
-    let* t = store env in
+    let t = store env in
     let hash' = Irmin.Type.of_string Store.Hash.t hash in
     match hash' with
     | Error _ -> Lwt_io.eprintlf "invalid hash: %s" hash
@@ -340,7 +341,7 @@ let set =
 let commit =
   let cmd store hash =
     run @@ fun env ->
-    let* t = store env in
+    let t = store env in
     let hash' = Irmin.Type.of_string Hash.t hash in
     let fail body = Lwt_io.fprintlf Lwt_io.stderr "ERROR %s" body in
     match hash' with
@@ -363,7 +364,7 @@ let commit =
 let hash =
   let cmd store path =
     run @@ fun env ->
-    let* t = store env in
+    let t = store env in
     let+ hash = Wasmstore.hash t path in
     match hash with
     | None -> exit 1
@@ -381,7 +382,7 @@ let server =
       | Some (k, c) -> Some (`Key_file k, `Cert_file c)
       | None -> None
     in
-    let* t = store in
+    let t = store in
     try Server.run ~cors ?tls:tls' ?host ?port ?auth t
     with exn ->
       Logs.err (fun l -> l "Server.run: %s" @@ Printexc.to_string exn);
@@ -397,8 +398,8 @@ let server =
 
 let branch =
   let cmd () root branch_name delete list =
-    run @@ fun env ->
-    let+ t = v root ~env in
+    run' @@ fun env ->
+    let t = v root ~env in
     if list then
       let branches = Branch.list t in
       List.iter print_endline branches
@@ -425,7 +426,7 @@ let run_command command diff =
 let watch =
   let cmd store command =
     run @@ fun env ->
-    let* t = store env in
+    let t = store env in
     let* _w = watch t (run_command command) in
     let t, _ = Lwt.task () in
     t
@@ -442,7 +443,7 @@ let watch =
 let audit =
   let cmd store path =
     run @@ fun env ->
-    let* t = store env in
+    let t = store env in
     let* lm = Store.last_modified (Wasmstore.store t) path in
     let* () =
       Lwt_list.iter_s
@@ -465,7 +466,7 @@ let audit =
 let versions =
   let cmd store path =
     run @@ fun env ->
-    let* t = store env in
+    let t = store env in
     let* versions = versions t path in
     List.iter
       (fun (k, `Commit v) ->
@@ -482,7 +483,7 @@ let versions =
 let version =
   let cmd store path v =
     run @@ fun env ->
-    let* t = store env in
+    let t = store env in
     let+ version = version t path v in
     match version with
     | Some (k, `Commit v) ->
@@ -528,15 +529,15 @@ let rec mkdir_all p =
 let export =
   let cmd store output =
     run @@ fun env ->
-    let* t = store env in
+    let t = store env in
     let repo = Wasmstore.repo t in
     let root =
       Irmin.Backend.Conf.get (Store.Repo.config repo) Irmin_fs.Conf.Key.root
     in
-    let* files = Wasmstore.list t [] in
+    let files = Wasmstore.list t [] in
     Lwt_list.iter_p
       (fun (path, _) ->
-        let* v = Wasmstore.get_hash_and_filename t path in
+        let* v = Wasmstore.hash_and_filename_of_path t path in
         match v with
         | Some (_, filename) ->
             let s = Lwt_io.chars_of_file (root // filename) in
