@@ -290,23 +290,23 @@ module Hash_set = Set.Make (struct
 end)
 
 let versions t path =
-  let* lm = Store.last_modified t.db ~n:max_int path in
+  let$ lm = Store.last_modified t.db ~n:max_int path in
   let hashes = ref Hash_set.empty in
-  Lwt_list.filter_map_s
+  List.filter_map
     (fun commit ->
-      let* store = Store.of_commit commit in
-      let* hash = Store.hash store path in
+      let$ store = Store.of_commit commit in
+      let$ hash = Store.hash store path in
       match hash with
-      | None -> Lwt.return_none
+      | None -> None
       | Some h ->
-          if Hash_set.mem h !hashes then Lwt.return_none
+          if Hash_set.mem h !hashes then None
           else
             let () = hashes := Hash_set.add h !hashes in
-            Lwt.return_some (h, `Commit (Store.Commit.hash commit)))
+            Some (h, `Commit (Store.Commit.hash commit)))
     lm
 
 let version t path index =
-  let+ versions = versions t path in
+  let versions = versions t path in
   List.nth_opt versions index
 
 module Commit_info = struct
@@ -321,7 +321,7 @@ module Commit_info = struct
 end
 
 let commit_info t hash =
-  let* commit =
+  let$ commit =
     Lwt.catch
       (fun () -> Store.Commit.of_hash (repo t) hash)
       (function Assert_failure _ -> Lwt.return_none | exn -> raise exn)
@@ -330,7 +330,7 @@ let commit_info t hash =
   | Some commit ->
       let parents = Store.Commit.parents commit in
       let info = Store.Commit.info commit in
-      Lwt.return_some
+      Some
         Commit_info.
           {
             hash;
@@ -339,4 +339,4 @@ let commit_info t hash =
             date = Store.Info.date info;
             message = Store.Info.message info;
           }
-  | None -> Lwt.return_none
+  | None -> None

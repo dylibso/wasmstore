@@ -5,4 +5,4 @@ module Server = Server
 module Error = Error
 
 let watch = Diff.watch
-let unwatch = Store.unwatch
+let unwatch w = Lwt_eio.run_lwt @@ fun () -> Store.unwatch w

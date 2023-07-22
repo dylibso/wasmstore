@@ -1,4 +1,5 @@
 open Lwt.Syntax
+open Syntax
 open Store
 
 let update_old_new v v' =
@@ -74,6 +75,8 @@ let string_of_diff t d =
   Yojson.Safe.to_string j
 
 let watch t f =
+  lwt @@ fun () ->
   Store.watch t.db (fun diff ->
       let* j = json_of_diff t diff in
-      f j)
+      let x = f j in
+      Lwt.return x)

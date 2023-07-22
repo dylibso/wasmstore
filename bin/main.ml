@@ -160,7 +160,7 @@ let add =
     let path =
       match path with Some p -> p | None -> [ Filename.basename filename ]
     in
-    run' @@ fun env ->
+    run @@ fun env ->
     let t = store env in
     let data =
       if filename = "-" then stdin_stream () else file_stream filename
@@ -180,7 +180,7 @@ let add =
 
 let find =
   let cmd store path =
-    run' @@ fun env ->
+    run @@ fun env ->
     let t = store env in
     let value = find t path in
     match value with None -> exit 1 | Some value -> print_string value
@@ -192,7 +192,7 @@ let find =
 
 let filename =
   let cmd store path =
-    run' @@ fun env ->
+    run @@ fun env ->
     let t = store env in
     let config = Store.Repo.config (repo t) in
     let root = Irmin.Backend.Conf.find_root config |> Option.get in
@@ -208,7 +208,7 @@ let filename =
 
 let remove =
   let cmd store path =
-    run' @@ fun env ->
+    run @@ fun env ->
     let t = store env in
     Wasmstore.remove t path
   in
@@ -219,7 +219,7 @@ let remove =
 
 let merge =
   let cmd store branch_from =
-    run' @@ fun env ->
+    run @@ fun env ->
     let t = store env in
     let res = merge t branch_from in
     match res with
@@ -239,7 +239,7 @@ let gc =
   let cmd store =
     run @@ fun env ->
     let t = store env in
-    let+ res = gc t in
+    let res = gc t in
     Printf.printf "%d\n" res
   in
   let doc = "cleanup modules that are no longer referenced" in
@@ -249,7 +249,7 @@ let gc =
 
 let list =
   let cmd store path =
-    run' @@ fun env ->
+    run @@ fun env ->
     let t = store env in
     let items = list t path in
     List.iter
@@ -268,7 +268,7 @@ let list =
 
 let snapshot =
   let cmd store =
-    run' @@ fun env ->
+    run @@ fun env ->
     let t = store env in
     let head = snapshot t in
     print_endline (Irmin.Type.to_string Store.Hash.t (Store.Commit.hash head))
@@ -280,7 +280,7 @@ let snapshot =
 
 let restore =
   let cmd store commit path =
-    run' @@ fun env ->
+    run @@ fun env ->
     let t = store env in
     let hash = Irmin.Type.of_string Store.Hash.t commit in
     match hash with
@@ -300,7 +300,7 @@ let restore =
 
 let rollback =
   let cmd store path =
-    run' @@ fun env ->
+    run @@ fun env ->
     let t = store env in
     rollback ?path t 1
   in
@@ -311,7 +311,7 @@ let rollback =
 
 let contains =
   let cmd store path =
-    run' @@ fun env ->
+    run @@ fun env ->
     let t = store env in
     let value = contains t path in
     Format.printf "%b\n" value
@@ -323,7 +323,7 @@ let contains =
 
 let set =
   let cmd store hash path =
-    run' @@ fun env ->
+    run @@ fun env ->
     let t = store env in
     let hash' = Irmin.Type.of_string Store.Hash.t hash in
     match hash' with
@@ -340,17 +340,17 @@ let commit =
     run @@ fun env ->
     let t = store env in
     let hash' = Irmin.Type.of_string Hash.t hash in
-    let fail body = Lwt_io.fprintlf Lwt_io.stderr "ERROR %s" body in
+    let fail body = Printf.fprintf stderr "ERROR %s" body in
     match hash' with
     | Error _ -> fail "invalid hash"
     | Ok hash -> (
-        let* info = commit_info t hash in
+        let info = commit_info t hash in
         match info with
         | Some info ->
             let body =
               Irmin.Type.to_json_string ~minify:false Commit_info.t info
             in
-            Lwt_io.printl body
+            print_endline body
         | None -> fail "invalid commit")
   in
   let doc = "get commit info" in
@@ -360,7 +360,7 @@ let commit =
 
 let hash =
   let cmd store path =
-    run' @@ fun env ->
+    run @@ fun env ->
     let t = store env in
     let hash = Wasmstore.hash t path in
     match hash with
@@ -373,6 +373,7 @@ let hash =
   Cmd.v info term
 
 let server =
+  let first_run = ref true in
   let rec cmd store host port auth cors tls =
     let tls' =
       match tls with
@@ -382,8 +383,14 @@ let server =
     let t = store in
     try Server.run ~cors ?tls:tls' ?host ?port ?auth t
     with exn ->
-      Logs.err (fun l -> l "Server.run: %s" @@ Printexc.to_string exn);
-      cmd store host port auth cors tls
+      if !first_run then
+        let () = first_run := false in
+        raise exn
+      else
+        let () =
+          Logs.err (fun l -> l "Server.run: %s" @@ Printexc.to_string exn)
+        in
+        cmd store host port auth cors tls
   in
   let cmd store host port auth cors tls =
     run @@ fun env -> cmd (store env) host port auth cors tls
@@ -395,7 +402,7 @@ let server =
 
 let branch =
   let cmd () root branch_name delete list =
-    run' @@ fun env ->
+    run @@ fun env ->
     let t = v root ~env in
     if list then
       let branches = Branch.list t in
@@ -414,6 +421,7 @@ let branch =
   Cmd.v info term
 
 let run_command command diff =
+  Lwt_eio.run_lwt @@ fun () ->
   match command with
   | h :: t ->
       let s = Yojson.Safe.to_string diff in
@@ -424,9 +432,9 @@ let watch =
   let cmd store command =
     run @@ fun env ->
     let t = store env in
-    let* _w = watch t (run_command command) in
+    let _w = watch t (run_command command) in
     let t, _ = Lwt.task () in
-    t
+    Lwt_eio.run_lwt @@ fun () -> t
   in
   let doc = "Print updates or run command when the store is updated" in
   let info = Cmd.info "watch" ~doc in
@@ -441,19 +449,18 @@ let audit =
   let cmd store path =
     run @@ fun env ->
     let t = store env in
-    let* lm = Store.last_modified (Wasmstore.store t) path in
-    let* () =
-      Lwt_list.iter_s
-        (fun commit ->
-          let info = Store.Commit.info commit in
-          let hash = Store.Commit.hash commit in
-          Lwt_io.printlf "%s\t%s\t%s"
-            (convert_date @@ Store.Info.date info)
-            (Store.Info.author info)
-            (Irmin.Type.to_string Hash.t hash))
-        lm
+    let lm =
+      Lwt_eio.run_lwt @@ fun () -> Store.last_modified (Wasmstore.store t) path
     in
-    Lwt.return_unit
+    List.iter
+      (fun commit ->
+        let info = Store.Commit.info commit in
+        let hash = Store.Commit.hash commit in
+        Printf.printf "%s\t%s\t%s\n"
+          (convert_date @@ Store.Info.date info)
+          (Store.Info.author info)
+          (Irmin.Type.to_string Hash.t hash))
+      lm
   in
   let doc = "list commits that modified a specific path" in
   let info = Cmd.info "audit" ~doc in
@@ -464,13 +471,12 @@ let versions =
   let cmd store path =
     run @@ fun env ->
     let t = store env in
-    let* versions = versions t path in
+    let versions = versions t path in
     List.iter
       (fun (k, `Commit v) ->
         Fmt.pr "%a\tcommit: %a\n" (Irmin.Type.pp Hash.t) k
           (Irmin.Type.pp Hash.t) v)
-      versions;
-    Lwt.return_unit
+      versions
   in
   let doc = "list previous versions of a path" in
   let info = Cmd.info "versions" ~doc in
@@ -481,7 +487,7 @@ let version =
   let cmd store path v =
     run @@ fun env ->
     let t = store env in
-    let+ version = version t path v in
+    let version = version t path v in
     match version with
     | Some (k, `Commit v) ->
         Fmt.pr "%a\tcommit: %a\n" (Irmin.Type.pp Hash.t) k
@@ -532,6 +538,7 @@ let export =
       Irmin.Backend.Conf.get (Store.Repo.config repo) Irmin_fs.Conf.Key.root
     in
     let files = Wasmstore.list t [] in
+    Lwt_eio.run_lwt @@ fun () ->
     Lwt_list.iter_p
       (fun (path, _) ->
         let v = Wasmstore.hash_and_filename_of_path t path in

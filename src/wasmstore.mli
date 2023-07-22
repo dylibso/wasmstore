@@ -21,11 +21,8 @@ module Error : sig
 
   val to_string : t -> string
   val unwrap : ('a, t) result -> 'a
-  val unwrap_lwt : ('a, t) result Lwt.t -> 'a Lwt.t
   val wrap : (unit -> 'a) -> ('a, t) result
-  val wrap_lwt : (unit -> 'a Lwt.t) -> ('a, t) result Lwt.t
   val throw : t -> 'a
-  val catch_lwt : (unit -> 'a Lwt.t) -> (t -> 'a Lwt.t) -> 'a Lwt.t
   val catch : (unit -> 'a) -> (t -> 'a) -> 'a
 end
 
@@ -90,7 +87,7 @@ val list : t -> string list -> (string list * hash) list
 val contains : t -> string list -> bool
 (** [contains t path] returns true if [path] exists *)
 
-val gc : t -> int Lwt.t
+val gc : t -> int
 (** [gc t] runs the GC and returns the number of objects deleted.
 
     When the gc is executed for a branch all prior commits are squashed into one
@@ -115,16 +112,16 @@ val with_branch : t -> string -> t
 val with_author : t -> string -> t
 (** [with_author t name] returns a copy of [t] with [name] as the current author *)
 
-val watch : t -> (Yojson.Safe.t -> unit Lwt.t) -> Store.watch Lwt.t
+val watch : t -> (Yojson.Safe.t -> unit) -> Store.watch
 (** [watch t f] creates a new watch that calls [f] for each new commit *)
 
-val unwatch : Store.watch -> unit Lwt.t
+val unwatch : Store.watch -> unit 
 (** [unwatch w] unregisters and disables the watch [w] *)
 
-val versions : t -> string list -> (hash * [ `Commit of hash ]) list Lwt.t
+val versions : t -> string list -> (hash * [ `Commit of hash ]) list 
 
 val version :
-  t -> string list -> int -> (hash * [ `Commit of hash ]) option Lwt.t
+  t -> string list -> int -> (hash * [ `Commit of hash ]) option 
 
 module Commit_info : sig
   type t = {
@@ -137,7 +134,7 @@ module Commit_info : sig
   [@@deriving irmin]
 end
 
-val commit_info : t -> hash -> Commit_info.t option Lwt.t
+val commit_info : t -> hash -> Commit_info.t option 
 
 module Branch : sig
   val switch : t -> string -> unit
@@ -162,7 +159,7 @@ module Server : sig
     ?host:string ->
     ?port:int ->
     t ->
-    unit Lwt.t
+    unit 
   (** [run ~cors ~auth ~host ~port t] starts the server on [host:port]
       If [auth] is empty then no authentication is required, otherwise the client should
       provide a key using the [Wasmstore-Auth] header. [auth] is a mapping from

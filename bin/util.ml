@@ -35,16 +35,6 @@ let convert_date timestamp =
 let run f =
   Eio_main.run @@ fun env ->
   Lwt_eio.with_event_loop ~clock:env#clock @@ fun _token ->
-  Lwt_eio.run_lwt @@ fun () ->
-  Error.catch_lwt
-    (fun () -> f env)
-    (fun err ->
-      Logs.err (fun l -> l "%s" (Error.to_string err));
-      Lwt.return_unit)
-
-let run' f =
-  Eio_main.run @@ fun env ->
-  Lwt_eio.with_event_loop ~clock:env#clock @@ fun _token ->
   Error.catch
     (fun () -> f env)
     (fun err -> Logs.err (fun l -> l "%s" (Error.to_string err)))

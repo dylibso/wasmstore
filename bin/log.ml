@@ -27,6 +27,7 @@ let log store =
   let exception Return in
   let cmd store plain pager num skip reverse =
     run @@ fun env ->
+    Lwt_eio.run_lwt @@ fun () ->
     let t = store env in
     let repo = repo t in
     let skip = ref (Option.value ~default:0 skip) in

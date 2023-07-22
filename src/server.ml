@@ -1,4 +1,5 @@
 open Lwt.Syntax
+open Syntax
 open Store
 open Gc
 open Diff
@@ -152,7 +153,7 @@ let v1 t ~headers ~body ~req = function
       match hash' with
       | Error _ -> fail "invalid hash" `Bad_request
       | Ok hash -> (
-          let* info = commit_info t hash in
+          let info = commit_info t hash in
           match info with
           | Some info ->
               let body = Irmin.Type.to_json_string Commit_info.t info in
@@ -183,7 +184,7 @@ let v1 t ~headers ~body ~req = function
       delete_module t ~headers path
   | `POST, `V1 [ "gc" ] ->
       let* () = Body.drain_body body in
-      let* _ = gc t in
+      let _ = gc t in
       response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
   | `POST, `V1 [ "merge"; from_branch ] -> (
       let res = merge t from_branch in
@@ -223,7 +224,7 @@ let v1 t ~headers ~body ~req = function
            ~body:(Irmin.Type.to_string Store.Hash.t (Store.Commit.hash commit))
            ()
   | `GET, `V1 ("versions" :: path) ->
-      let* versions = versions t path in
+      let versions = versions t path in
       let conv = Irmin.Type.to_string Hash.t in
       let versions =
         List.map
@@ -235,7 +236,7 @@ let v1 t ~headers ~body ~req = function
       response @@ Server.respond ~headers ~body ~status:`OK ()
   | `GET, `V1 ("version" :: v :: path) -> (
       let* () = Body.drain_body body in
-      let* version = version t path (int_of_string v) in
+      let version = version t path (int_of_string v) in
       match version with
       | None -> response @@ Server.respond_not_found ()
       | Some (_, `Commit commit) ->
@@ -271,22 +272,20 @@ let v1 t ~headers ~body ~req = function
               | Some w -> Lwt.async (fun () -> Store.unwatch w)
               | None -> ())
       in
-      let+ watch =
+      let watch =
         watch t (fun diff ->
-            Lwt.catch
-              (fun () ->
-                let d = Yojson.Safe.to_string diff in
-                Lwt.wrap (fun () ->
-                    send (Some (Websocket.Frame.create ~content:d ()))))
-              (fun _ ->
-                match !w with
-                | Some w' ->
-                    let+ () = Store.unwatch w' in
-                    w := None
-                | None -> Lwt.return_unit))
+            try
+              let d = Yojson.Safe.to_string diff in
+              send (Some (Websocket.Frame.create ~content:d ()))
+            with _ -> (
+              match !w with
+              | Some w' ->
+                  let$ () = Store.unwatch w' in
+                  w := None
+              | None -> ()))
       in
       w := Some watch;
-      a
+      Lwt.return a
   | _, `V1 [ "auth" ] ->
       let* () = Body.drain_body body in
       response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
@@ -298,6 +297,7 @@ let callback t ~headers ~auth _conn req body =
   require_auth t ~auth ~headers ~body req ~v1:(v1 ~headers ~body ~req)
 
 let run ?tls ?(cors = false) ?auth ?(host = "localhost") ?(port = 6384) t =
+  Lwt_eio.run_lwt @@ fun () ->
   let headers =
     if cors then Header.of_list [ ("Access-Control-Allow-Origin", "*") ]
     else Header.of_list []
