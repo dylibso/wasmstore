@@ -160,22 +160,19 @@ let add =
     let path =
       match path with Some p -> p | None -> [ Filename.basename filename ]
     in
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
     let data =
       if filename = "-" then stdin_stream () else file_stream filename
     in
-    Lwt.catch
-      (fun () ->
-        let+ hash = import t path data in
-        Format.printf "%a\n" (Irmin.Type.pp Store.hash_t) hash)
-      (function
-        | Validation_error msg ->
-            Printf.fprintf stderr "ERROR invalid module: %s\n" msg;
-            Lwt.return_unit
-        | exn -> raise exn)
+    try
+      let hash = import t path data in
+      Format.printf "%a\n" (Irmin.Type.pp Store.hash_t) hash
+    with
+    | Validation_error msg ->
+        Printf.fprintf stderr "ERROR invalid module: %s\n" msg
+    | exn -> raise exn
   in
-
   let doc = "add a WASM module" in
   let info = Cmd.info "add" ~doc in
   let term = Term.(const cmd $ store $ file 0 $ path_opt 1) in
@@ -183,9 +180,9 @@ let add =
 
 let find =
   let cmd store path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
-    let+ value = find t path in
+    let value = find t path in
     match value with None -> exit 1 | Some value -> print_string value
   in
   let doc = "find a WASM module by hash or name" in
@@ -195,14 +192,14 @@ let find =
 
 let filename =
   let cmd store path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
     let config = Store.Repo.config (repo t) in
     let root = Irmin.Backend.Conf.find_root config |> Option.get in
-    let* opt = Wasmstore.hash_and_filename_of_path t path in
+    let opt = Wasmstore.hash_and_filename_of_path t path in
     match opt with
     | None -> exit 1
-    | Some (_, filename) -> Lwt_io.printl (Filename.concat root filename)
+    | Some (_, filename) -> print_endline (Filename.concat root filename)
   in
   let doc = "get the path on disk by hash or name" in
   let info = Cmd.info "filename" ~doc in
@@ -211,7 +208,7 @@ let filename =
 
 let remove =
   let cmd store path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
     Wasmstore.remove t path
   in
@@ -314,9 +311,9 @@ let rollback =
 
 let contains =
   let cmd store path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
-    let+ value = contains t path in
+    let value = contains t path in
     Format.printf "%b\n" value
   in
   let doc = "check if a WASM module exists by hash or name" in
@@ -326,11 +323,11 @@ let contains =
 
 let set =
   let cmd store hash path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
     let hash' = Irmin.Type.of_string Store.Hash.t hash in
     match hash' with
-    | Error _ -> Lwt_io.eprintlf "invalid hash: %s" hash
+    | Error _ -> Printf.fprintf stderr "invalid hash: %s\n" hash
     | Ok hash -> Wasmstore.set t path hash
   in
   let doc = "set a path to point to an existing hash" in
@@ -363,9 +360,9 @@ let commit =
 
 let hash =
   let cmd store path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
-    let+ hash = Wasmstore.hash t path in
+    let hash = Wasmstore.hash t path in
     match hash with
     | None -> exit 1
     | Some hash -> Format.printf "%a\n" (Irmin.Type.pp Store.Hash.t) hash
@@ -537,7 +534,7 @@ let export =
     let files = Wasmstore.list t [] in
     Lwt_list.iter_p
       (fun (path, _) ->
-        let* v = Wasmstore.hash_and_filename_of_path t path in
+        let v = Wasmstore.hash_and_filename_of_path t path in
         match v with
         | Some (_, filename) ->
             let s = Lwt_io.chars_of_file (root // filename) in

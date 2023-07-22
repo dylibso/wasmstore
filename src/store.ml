@@ -27,9 +27,9 @@ let info t = Info.v ~author:t.author
 let hash_or_path ~hash ~path = function
   | [ hash_or_path ] -> (
       match Irmin.Type.of_string Store.Hash.t hash_or_path with
-      | Ok x -> Error.mk_lwt @@ fun () -> hash x
-      | Error _ -> Error.mk_lwt @@ fun () -> path [ hash_or_path ])
-  | x -> Error.mk_lwt @@ fun () -> path x
+      | Ok x -> Error.mk @@ fun () -> hash x
+      | Error _ -> Error.mk @@ fun () -> path [ hash_or_path ])
+  | x -> Error.mk @@ fun () -> path x
 
 let root t =
   let conf = Store.Repo.config (repo t) in
@@ -100,30 +100,35 @@ let path_of_hash hash =
   "objects" // a // b
 
 let hash_and_filename_of_path t path =
-  let* hash = hash_or_path ~hash:Lwt.return_some ~path:(Store.hash t.db) path in
+  let hash =
+    hash_or_path ~hash:Option.some
+      ~path:(fun x -> Lwt_eio.run_lwt @@ fun () -> Store.hash t.db x)
+      path
+  in
   match hash with
-  | None -> Lwt.return_none
+  | None -> None
   | Some hash ->
       let path = path_of_hash hash in
-      Lwt.return_some (hash, path)
+      Some (hash, path)
 
 let hash_of_path t path =
+  lwt @@ fun () ->
   hash_or_path ~hash:Lwt.return_some ~path:(Store.hash t.db) path
 
 let set_path t path hash =
-  let* tree = Store.Tree.of_hash (repo t) (`Contents (hash, ())) in
+  let$ tree = Store.Tree.of_hash (repo t) (`Contents (hash, ())) in
   match tree with
   | None -> Error.throw (`Msg "hash mismatch")
   | Some tree ->
       let info = info t "Import %a" (Irmin.Type.pp Store.Path.t) path in
-      Store.set_tree_exn t.db path tree ~info
+      lwt @@ fun () -> Store.set_tree_exn t.db path tree ~info
 
 let import t path stream =
   let hash = ref (Digestif.SHA256.init ()) in
   let tmp =
     Filename.temp_file ~temp_dir:(root t // "tmp") "wasmstore" "import"
   in
-  let* () =
+  let$ () =
     Lwt_io.with_file
       ~flags:Unix.[ O_CREAT; O_WRONLY ]
       ~mode:Output tmp
@@ -139,8 +144,8 @@ let import t path stream =
     Irmin.Hash.SHA256.unsafe_of_raw_string (Digestif.SHA256.to_raw_string hash)
   in
   let dest = root t // path_of_hash hash in
-  let* exists = Lwt_unix.file_exists dest in
-  let* () =
+  let$ exists = Lwt_unix.file_exists dest in
+  let$ () =
     if not exists then
       let () =
         try verify_file tmp
@@ -152,33 +157,37 @@ let import t path stream =
       Lwt_unix.rename tmp dest
     else Lwt.return_unit
   in
-  let* () = set_path t path hash in
-  Lwt.return hash
+  let () = set_path t path hash in
+  hash
 
 let add t path wasm =
   let () = verify_string wasm in
   let info = info t "Add %a" (Irmin.Type.pp Store.Path.t) path in
   let f hash =
-    Error.mk_lwt @@ fun () ->
+    Error.mk @@ fun () ->
+    lwt @@ fun () ->
     Store.set_exn t.db [ Irmin.Type.to_string Store.Hash.t hash ] wasm ~info
   in
-  let+ () =
+  let () =
     hash_or_path ~hash:f
       ~path:(fun path ->
         (* If the path is empty then just add the contents to the store without
            associating it with a path *)
         match path with
         | [] ->
+            lwt @@ fun () ->
             Store.Backend.Repo.batch (repo t) (fun contents _ _ ->
                 let+ _ = Store.save_contents contents wasm in
                 ())
-        | _ -> Error.mk_lwt @@ fun () -> Store.set_exn t.db path wasm ~info)
+        | _ ->
+            Error.mk @@ fun () ->
+            lwt @@ fun () -> Store.set_exn t.db path wasm ~info)
       path
   in
   Store.Contents.hash wasm
 
 let set t path hash =
-  let* tree = Store.Tree.of_hash (repo t) (`Contents (hash, ())) in
+  let$ tree = Store.Tree.of_hash (repo t) (`Contents (hash, ())) in
   let f path =
     match tree with
     | None -> Error.throw (`Msg "hash mismatch")
@@ -190,7 +199,7 @@ let set t path hash =
             (Irmin.Type.pp Store.Hash.t)
             hash
         in
-        Store.set_tree_exn t.db path tree ~info
+        lwt @@ fun () -> Store.set_tree_exn t.db path tree ~info
   in
   hash_or_path
     ~hash:(fun _ ->
@@ -198,10 +207,14 @@ let set t path hash =
     ~path:f path
 
 let find_hash { db; _ } hash = Store.Contents.of_hash (Store.repo db) hash
-let find t path = hash_or_path ~hash:(find_hash t) ~path:(Store.find t.db) path
+
+let find t path =
+  lwt @@ fun () -> hash_or_path ~hash:(find_hash t) ~path:(Store.find t.db) path
 
 let hash t path =
-  hash_or_path ~hash:(fun x -> Lwt.return_some x) ~path:(Store.hash t.db) path
+  hash_or_path ~hash:Option.some
+    ~path:(fun x -> lwt @@ fun () -> Store.hash t.db x)
+    path
 
 let hash_eq = Irmin.Type.(unstage (equal Store.Hash.t))
 
@@ -213,24 +226,27 @@ let remove t path =
       match Store.Tree.destruct tree with
       | `Contents (c, _) ->
           let hash = Store.Tree.Contents.hash c in
-          if hash_eq hash h then Store.Tree.remove tree path
-          else Lwt.return tree
+          if hash_eq hash h then lwt @@ fun () -> Store.Tree.remove tree path
+          else tree
       | `Node _ ->
-          let* items = Store.Tree.list tree [] in
-          Lwt_list.fold_left_s
+          let$ items = Store.Tree.list tree [] in
+          List.fold_left
             (fun tree -> function p, _ -> aux tree (Store.Path.rcons path p))
             tree items
     in
-    let* tree = Store.tree t.db in
-    let* tree = aux tree [] in
-    Error.mk_lwt @@ fun () ->
+    let$ tree = Store.tree t.db in
+    let tree = aux tree [] in
+    Error.mk @@ fun () ->
+    lwt @@ fun () ->
     Store.test_and_set_tree_exn t.db path ~test:(Some tree) ~set:(Some tree)
       ~info
   in
-  hash_or_path ~path:(Store.remove_exn t.db ~info) ~hash path
+  hash_or_path
+    ~path:(fun x -> lwt @@ fun () -> Store.remove_exn t.db ~info x)
+    ~hash path
 
 let list { db; _ } path =
-  Lwt_eio.run_lwt @@ fun () ->
+  lwt @@ fun () ->
   let rec aux path =
     let* items = Store.list db path in
     let+ items =
@@ -249,7 +265,7 @@ let list { db; _ } path =
   aux path
 
 let contains_hash t hash =
-  let+ res =
+  let res =
     hash_and_filename_of_path t [ Irmin.Type.to_string Store.Hash.t hash ]
   in
   Option.is_some res
@@ -257,12 +273,12 @@ let contains_hash t hash =
 let contains t path =
   hash_or_path
     ~hash:(fun h -> contains_hash t h)
-    ~path:(fun path -> Store.mem t.db path)
+    ~path:(fun path -> lwt @@ fun () -> Store.mem t.db path)
     path
 
 let merge t branch =
   let info = info t "Merge %s" branch in
-  Lwt_eio.run_lwt @@ fun () -> Store.merge_with_branch t.db ~info branch
+  lwt @@ fun () -> Store.merge_with_branch t.db ~info branch
 
 let with_branch t branch = { t with branch }
 let with_author t author = { t with author }

@@ -40,7 +40,7 @@ let add_module t ~headers body path =
   let data = Body.to_stream body in
   Lwt.catch
     (fun () ->
-      let* hash = import t path data in
+      let hash = import t path data in
       let body = Irmin.Type.to_string Store.Hash.t hash in
       response @@ Server.respond_string ~headers ~status:`OK ~body ())
     (function
@@ -55,7 +55,7 @@ let set_hash t ~headers hash path =
   | Ok hash ->
       Lwt.catch
         (fun () ->
-          let* () = set t path hash in
+          let () = set t path hash in
           response @@ Server.respond_string ~headers ~status:`OK ~body:"" ())
         (function
           | Validation_error msg ->
@@ -69,7 +69,7 @@ let set_hash t ~headers hash path =
            ~body:"invalid hash" ()
 
 let find_module t ~headers path =
-  let* filename = hash_and_filename_of_path t path in
+  let filename = hash_and_filename_of_path t path in
   match filename with
   | Some (hash, filename) ->
       let headers =
@@ -82,11 +82,11 @@ let find_module t ~headers path =
       response @@ Server.respond_string ~headers ~status:`Not_found ~body:"" ()
 
 let delete_module t ~headers path =
-  let* () = remove t path in
+  let () = remove t path in
   response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
 
 let find_hash t ~headers path =
-  let* hash = hash t path in
+  let hash = hash t path in
   match hash with
   | Some hash ->
       let body = Body.of_string (Irmin.Type.to_string Store.Hash.t hash) in
@@ -166,7 +166,7 @@ let v1 t ~headers ~body ~req = function
       find_module t ~headers path
   | `HEAD, `V1 ("module" :: path) ->
       let* () = Body.drain_body body in
-      let* exists = contains t path in
+      let exists = contains t path in
       response
       @@ Server.respond_string ~headers
            ~status:(if exists then `OK else `Not_found)

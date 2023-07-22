@@ -61,33 +61,33 @@ val rollback : t -> ?path:string list -> int -> unit
 (** [rollback t n] sets the head commit to [n] commits in the past, if [path] is provided then only the specfied 
     path will be reverted *)
 
-val find : t -> string list -> string option Lwt.t
+val find : t -> string list -> string option
 (** [find t path] returns the module associated with [path], if path is a single-item list containing 
     the string representation of the hash then the module will be located using the hash instead. This
     goes for all functions that accept [path] arguments unless otherwise noted. *)
 
-val add : t -> string list -> string -> hash Lwt.t
+val add : t -> string list -> string -> hash
 (** [add t path wasm_module] sets [path] to [wasm_module] after verifying the module. If [path] is a hash
     then it will be converted to "[$HASH].wasm". *)
 
-val set : t -> string list -> hash -> unit Lwt.t
+val set : t -> string list -> hash -> unit
 (** [set t path hash] sets [path] to an existing [hash] *)
 
-val import : t -> string list -> string Lwt_stream.t -> hash Lwt.t
+val import : t -> string list -> string Lwt_stream.t -> hash
 (** [import t path stream] adds a WebAssembly module from the given stream *)
 
-val hash : t -> string list -> hash option Lwt.t
+val hash : t -> string list -> hash option
 (** [hash t path] returns the hash associated the the value stored at [path],
     if it exists *)
 
-val remove : t -> string list -> unit Lwt.t
+val remove : t -> string list -> unit
 (** [remove t path] deletes [path] *)
 
 val list : t -> string list -> (string list * hash) list
 (** [list t path] returns a list of modules stored under [path]. This function does not accept
     a hash parameter in place of [path] *)
 
-val contains : t -> string list -> bool Lwt.t
+val contains : t -> string list -> bool
 (** [contains t path] returns true if [path] exists *)
 
 val gc : t -> int Lwt.t
@@ -99,11 +99,11 @@ val gc : t -> int Lwt.t
     the garbage collector may purge prior commits, potentially causing `restore`
     to fail. *)
 
-val hash_and_filename_of_path : t -> string list -> (hash * string) option Lwt.t
+val hash_and_filename_of_path : t -> string list -> (hash * string) option
 (** [hash_and_filename_of_path t path] returns a tuple containing the hash and the filename
     of the object disk relative to the root path *)
 
-val hash_of_path : t -> string list -> hash option Lwt.t
+val hash_of_path : t -> string list -> hash option
 (** [hash_of_path t path] returns the hash of a path if it exists in the database *)
 
 val merge : t -> string -> (unit, Irmin.Merge.conflict) result
