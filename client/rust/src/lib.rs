@@ -341,6 +341,10 @@ mod tests {
         let hash = client.snapshot().await.unwrap();
         client.commit_info(&hash).await.unwrap();
 
+        client.remove("test.wasm").await.unwrap();
+
+        client.restore(&hash).await.unwrap();
+
         assert!(data.is_some());
         assert!(data1.is_some());
         assert_eq!(data, data1);

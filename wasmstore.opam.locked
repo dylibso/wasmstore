@@ -5,7 +5,7 @@ depends: [
   "angstrom" {= "0.15.0" & ?vendor}
   "asn1-combinators" {= "0.2.6" & ?vendor}
   "astring" {= "0.8.5+dune" & ?vendor}
-  "base" {= "v0.16.1" & ?vendor}
+  "base" {= "v0.16.2" & ?vendor}
   "base-bigarray" {= "base"}
   "base-bytes" {= "base+dune" & ?vendor}
   "base-domains" {= "base"}
@@ -21,26 +21,27 @@ depends: [
   "cf" {= "0.5.0" & ?vendor}
   "cf-lwt" {= "0.5.0" & ?vendor}
   "cmdliner" {= "1.1.1+dune" & ?vendor}
-  "cohttp" {= "5.2.0" & ?vendor}
-  "cohttp-lwt" {= "5.2.0" & ?vendor}
-  "cohttp-lwt-unix" {= "5.2.0" & ?vendor}
+  "cohttp" {= "5.3.0" & ?vendor}
+  "cohttp-lwt" {= "5.3.0" & ?vendor}
+  "cohttp-lwt-unix" {= "5.3.0" & ?vendor}
   "conduit" {= "6.2.0" & ?vendor}
   "conduit-lwt" {= "6.2.0" & ?vendor}
   "conduit-lwt-unix" {= "6.2.0" & ?vendor}
   "conf-gmp" {= "4"}
   "conf-gmp-powm-sec" {= "3"}
+  "conf-libffi" {= "2.0.0"}
   "conf-pkg-config" {= "3"}
   "conf-rust-2021" {= "1"}
   "cppo" {= "1.6.9" & ?vendor}
   "csexp" {= "1.5.2" & ?vendor}
   "cstruct" {= "6.2.0" & ?vendor}
-  "ctypes" {= "0.20.1+dune" & ?vendor}
-  "ctypes-foreign" {= "0.20.1+dune" & ?vendor}
+  "ctypes" {= "0.21.1" & ?vendor}
+  "ctypes-foreign" {= "0.21.1" & ?vendor}
   "digestif" {= "1.1.4" & ?vendor}
   "domain-local-await" {= "0.2.1" & ?vendor}
   "domain-name" {= "0.4.0" & ?vendor}
-  "dune" {= "3.9.1"}
-  "dune-configurator" {= "3.9.1" & ?vendor}
+  "dune" {= "3.9.2"}
+  "dune-configurator" {= "3.9.2" & ?vendor}
   "duration" {= "0.2.1" & ?vendor}
   "eio" {= "0.10" & ?vendor}
   "eio_linux" {= "0.10" & ?vendor}
@@ -136,15 +137,17 @@ depexts: [
   ["gmp" "gmp-devel"] {os-distribution = "ol"}
   ["gmp-dev"] {os-distribution = "alpine"}
   ["gmp-devel"] {os-family = "suse"}
+  ["libffi"] {os = "freebsd"}
+  ["libffi"] {os-distribution = "nixos"}
   ["libffi"] {os = "macos" & os-distribution = "homebrew"}
   ["libffi"] {os = "macos" & os-distribution = "macports"}
   ["libffi"] {os = "win32" & os-distribution = "cygwinports"}
   ["libffi-dev"] {os-distribution = "alpine"}
-  ["libffi-dev"] {os-distribution = "debian"}
-  ["libffi-dev"] {os-distribution = "ubuntu"}
+  ["libffi-dev"] {os-family = "debian"}
   ["libffi-devel"] {os-distribution = "centos"}
   ["libffi-devel"] {os-distribution = "fedora"}
-  ["libffi-devel"] {os-distribution = "oraclelinux"}
+  ["libffi-devel"] {os-distribution = "mageia"}
+  ["libffi-devel"] {os-distribution = "ol"}
   ["libffi-devel"] {os-family = "suse"}
   ["libgmp-dev"] {os-family = "debian"}
   ["libgmp-dev"] {os-family = "ubuntu"}
@@ -182,8 +185,8 @@ pin-depends: [
     "https://github.com/dune-universe/astring/archive/v0.8.5+dune.tar.gz"
   ]
   [
-    "base.v0.16.1"
-    "https://github.com/janestreet/base/archive/refs/tags/v0.16.1.tar.gz"
+    "base.v0.16.2"
+    "https://github.com/janestreet/base/archive/refs/tags/v0.16.2.tar.gz"
   ]
   [
     "base-bytes.base+dune"
@@ -226,16 +229,16 @@ pin-depends: [
     "https://erratique.ch/software/cmdliner/releases/cmdliner-1.1.1.tbz"
   ]
   [
-    "cohttp.5.2.0"
-    "https://github.com/mirage/ocaml-cohttp/releases/download/v5.2.0/cohttp-5.2.0.tbz"
+    "cohttp.5.3.0"
+    "https://github.com/mirage/ocaml-cohttp/releases/download/v5.3.0/cohttp-5.3.0.tbz"
   ]
   [
-    "cohttp-lwt.5.2.0"
-    "https://github.com/mirage/ocaml-cohttp/releases/download/v5.2.0/cohttp-5.2.0.tbz"
+    "cohttp-lwt.5.3.0"
+    "https://github.com/mirage/ocaml-cohttp/releases/download/v5.3.0/cohttp-5.3.0.tbz"
   ]
   [
-    "cohttp-lwt-unix.5.2.0"
-    "https://github.com/mirage/ocaml-cohttp/releases/download/v5.2.0/cohttp-5.2.0.tbz"
+    "cohttp-lwt-unix.5.3.0"
+    "https://github.com/mirage/ocaml-cohttp/releases/download/v5.3.0/cohttp-5.3.0.tbz"
   ]
   [
     "conduit.6.2.0"
@@ -262,12 +265,12 @@ pin-depends: [
     "https://github.com/mirage/ocaml-cstruct/releases/download/v6.2.0/cstruct-6.2.0.tbz"
   ]
   [
-    "ctypes.0.20.1+dune"
-    "https://github.com/dune-universe/ocaml-ctypes/releases/download/0.20.1%2Bdune/ctypes-foreign-0.20.1.dune.tbz"
+    "ctypes.0.21.1"
+    "https://github.com/yallop/ocaml-ctypes/archive/refs/tags/0.21.1.tar.gz"
   ]
   [
-    "ctypes-foreign.0.20.1+dune"
-    "https://github.com/dune-universe/ocaml-ctypes/releases/download/0.20.1%2Bdune/ctypes-foreign-0.20.1.dune.tbz"
+    "ctypes-foreign.0.21.1"
+    "https://github.com/yallop/ocaml-ctypes/archive/refs/tags/0.21.1.tar.gz"
   ]
   [
     "digestif.1.1.4"
@@ -282,8 +285,8 @@ pin-depends: [
     "https://github.com/hannesm/domain-name/releases/download/v0.4.0/domain-name-0.4.0.tbz"
   ]
   [
-    "dune-configurator.3.9.1"
-    "https://github.com/ocaml/dune/releases/download/3.9.1/dune-3.9.1.tbz"
+    "dune-configurator.3.9.2"
+    "https://github.com/ocaml/dune/releases/download/3.9.2/dune-3.9.2.tbz"
   ]
   [
     "duration.0.2.1"
@@ -690,14 +693,6 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/dune-universe/ocaml-ctypes/releases/download/0.20.1%2Bdune/ctypes-foreign-0.20.1.dune.tbz"
-    "ocaml-ctypes"
-    [
-      "sha256=fd4ecf06c1d90931408c26708c21b7eb07bf703fdf06a793431451b7a1e8676f"
-      "sha512=241f2cf9b4dc9d352c7b5d487667dbef0d7708d025d9ae0adaab7389975ed76b67ef923d8041e4d6e3ce895d904f68ddded7812d514e117c32c4aae5fd9b5e2a"
-    ]
-  ]
-  [
     "https://github.com/dune-universe/ptime/releases/download/v1.1.0%2Bdune/ptime-1.1.0.dune.tbz"
     "ptime"
     [
@@ -764,11 +759,11 @@ x-opam-monorepo-duniverse-dirs: [
     ["md5=909fdc277cf03096a35b565325d5314a"]
   ]
   [
-    "https://github.com/janestreet/base/archive/refs/tags/v0.16.1.tar.gz"
+    "https://github.com/janestreet/base/archive/refs/tags/v0.16.2.tar.gz"
     "base"
     [
-      "md5=ae1cc041c0f8ea3ca163bc904336e9aa"
-      "sha512=347ccc68be09ef207f0ac793f1c472688855ba53c317a35c95f7124be4105985b54f866b604a66a9d2e54bc320f7b29ffa3eb224622b1cce6ca504e1ee4888ff"
+      "md5=e0fbb6fd77d85b5de4766ce5d9593af2"
+      "sha512=d5f00c411dbdffe6cabc7ec309550c4f947e79c9ff6c95cbb2d148fd0bbff060db8019c9544c1db56172a6d143f810e700d7092d404ba6cbcd756cbaa896813f"
     ]
   ]
   [
@@ -880,11 +875,11 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/mirage/ocaml-cohttp/releases/download/v5.2.0/cohttp-5.2.0.tbz"
+    "https://github.com/mirage/ocaml-cohttp/releases/download/v5.3.0/cohttp-5.3.0.tbz"
     "ocaml-cohttp"
     [
-      "sha256=5dba8f26185603fb27f2ebfbadf701232ba8d1b2fe69e65e7253f21af7296f9b"
-      "sha512=84c6609964efa65e1d2e51563a985041d73810b85bc25f8e757b45397903e28b4e91979c49afdc8ff1fd79b202ff15f8ec3516ae6ea5c69a25bfa0a2ae46a7ea"
+      "sha256=b3bd91c704e5ea510e924b83ab2ede1fc46a2cce448b0f8cef4883b9a16eeddd"
+      "sha512=529930d9b1f38737d91f47cb94f8bae381df87ea941cb8e75ee798354763bdf5091f4f3be31d0ba14b9944dc68203a3d98e235c38c66e7e176a114be9ff4acf3"
     ]
   ]
   [
@@ -1061,11 +1056,11 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/ocaml/dune/releases/download/3.9.1/dune-3.9.1.tbz"
+    "https://github.com/ocaml/dune/releases/download/3.9.2/dune-3.9.2.tbz"
     "dune_"
     [
-      "sha256=f0c3ce49f36c733b8aee72611f107cf06de6bc423be7262aab1bb3f03c05a878"
-      "sha512=105ea325a3a9d0c51e64d440d7f13f2231c5d0a56ea0bc334b3a39db4644499153823456f5d7b20f8bec724b3ceaace7c1718c3b941c300135769d01bb663979"
+      "sha256=4f3acbd45d3dcdbbbda891372f43f056942b6b96ed977ec5281ba9a875134adf"
+      "sha512=58472598f5b6c72a1f7ff01c122e8a66f4a60e7c689190c7c78247f6c22aed231572d660d0e64d26037bd2558798a1f9b764bf4e955617f765e47296b1a9a62b"
     ]
   ]
   [
@@ -1123,6 +1118,11 @@ x-opam-monorepo-duniverse-dirs: [
       "md5=5bb1c5754d305acf9c1f10611f49aae2"
       "sha512=3e114ee0e8b5b9c7c996df0d2cd8f03e0efdfb9837c1990f98c256868c0e2ad275f91be1adcfbbbcf1bdab801f18e82efa483510d2566e0d12cb303dfc91e4e5"
     ]
+  ]
+  [
+    "https://github.com/yallop/ocaml-ctypes/archive/refs/tags/0.21.1.tar.gz"
+    "ocaml-ctypes"
+    ["md5=8b201d932741c5096854e5eb39139b90"]
   ]
   [
     "https://github.com/yallop/ocaml-integers/archive/0.7.0.tar.gz"
