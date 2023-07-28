@@ -56,3 +56,4 @@ jobs:
         os:
           - macos-latest
           - ubuntu-latest
+        target: [x86_64, aarch64]
