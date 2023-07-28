@@ -1,11 +1,11 @@
 PREFIX?=/usr/local
 VERSION=0.2
-UNAME_M:=$(shell uname -m)
+TARGET?=$(shell uname -m)
 UNAME_S:=$(shell uname -s | tr '[:upper:]' '[:lower:]')
 ifeq ($(UNAME_S),darwin)
 	UNAME_S=macos
 endif
-RELEASE_DIR=wasmstore-$(UNAME_M)-$(UNAME_S)-$(VERSION)
+RELEASE_DIR=wasmstore-$(TARGET)-$(UNAME_S)-$(VERSION)
 
 build:
 	dune build

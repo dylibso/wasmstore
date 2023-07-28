@@ -27,13 +27,13 @@ jobs:
         name: 'OCaml/Opam cache'
         uses: actions/cache@v3
         with:
-          key: 'wasmstore-opam-${{ matrix.ocaml-compiler }}-${{ matrix.os }}'
+          key: 'wasmstore-opam-${{ matrix.ocaml-compiler }}-${{ matrix.target }}-${{ matrix.os }}'
           path: ~/.opam
       - id: wasmstore-dune-cache
         name: 'OCaml/Dune cache'
         uses: actions/cache@v3
         with:
-          key: wasmstore-dune-${{ matrix.ocaml-compiler }}-${{ matrix.os }}-${{ hashFiles('src/**') }}-${{ hashFiles('dune-project') }}
+          key: wasmstore-dune-${{ matrix.ocaml-compiler }}-${{ matrix.target }}-${{ matrix.os }}-${{ hashFiles('src/**') }}-${{ hashFiles('dune-project') }}
           path: _build
       - name: 'Use OCaml ${{ matrix.ocaml-compiler }}'
         uses: ocaml/setup-ocaml@v2
@@ -41,7 +41,7 @@ jobs:
           ocaml-compiler: '${{ matrix.ocaml-compiler }}'
       - run: opam install . --deps-only -y
       - name: 'Make release'
-        run: opam exec -- make release
+        run: opam exec -- make release TARGET=${{ matrix.target }}
       - name: Upload Artifact to Release
         uses: softprops/action-gh-release@v1
         with:
