@@ -1,5 +1,5 @@
 PREFIX?=/usr/local
-VERSION=0.1
+VERSION=0.2
 UNAME_M:=$(shell uname -m)
 UNAME_S:=$(shell uname -s | tr '[:upper:]' '[:lower:]')
 ifeq ($(UNAME_S),darwin)
