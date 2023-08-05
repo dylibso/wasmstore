@@ -6,7 +6,7 @@ LABEL org.opencontainers.image.licenses=BSD-3-Clause
 FROM ocaml/opam:latest as build
 RUN sudo apt-get update && sudo apt-get install -y libgmp-dev pkg-config libssl-dev libffi-dev curl
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-COPY --chown=opam . ./src
+COPY --chown=opam . /home/opam/src
 COPY --chown=opam --from=rust /usr/local/cargo /home/opam/.cargo
 COPY --chown=opam --from=rust /usr/local/cargo/bin/rustc /usr/local/bin/rustc
 RUN sudo ln -sf /home/opam/.cargo/bin/cargo /usr/bin/cargo
