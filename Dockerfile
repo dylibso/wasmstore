@@ -3,7 +3,7 @@ LABEL org.opencontainers.image.source=https://github.com/dylibso/wasmstore
 LABEL org.opencontainers.image.description="Wasmstore image"
 LABEL org.opencontainers.image.licenses=BSD-3-Clause
 
-FROM ocaml/opam:latest as build
+FROM ocaml/opam:debian-12 as build
 RUN sudo apt-get update && sudo apt-get install -y libgmp-dev pkg-config libssl-dev libffi-dev curl
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 COPY --chown=opam . /home/opam/src
@@ -19,7 +19,7 @@ RUN opam repository add dune-universe git+https://github.com/dune-universe/opam-
 RUN opam monorepo pull
 RUN eval $(opam env) && dune build ./bin/main.exe
 
-FROM debian:latest
+FROM debian:12
 ENV PORT=6384
 ENV HOST=0.0.0.0
 COPY --from=build /usr/lib /usr/lib
