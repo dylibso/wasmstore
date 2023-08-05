@@ -19,12 +19,12 @@ RUN opam repository add dune-universe git+https://github.com/dune-universe/opam-
 RUN opam monorepo pull
 RUN eval $(opam env) && dune build ./bin/main.exe
 
-FROM ocaml/opam:latest
+FROM debian:latest
 ENV PORT=6384
 ENV HOST=0.0.0.0
 COPY --from=build /usr/lib /usr/lib
 COPY --from=build /home/opam/src/_build/default/bin/main.exe /usr/bin/wasmstore
-RUN sudo groupadd -r wasmstore && sudo useradd -m -r -g wasmstore wasmstore
+RUN groupadd -r wasmstore && useradd -m -r -g wasmstore wasmstore
 USER wasmstore
 WORKDIR /home/wasmstore
 EXPOSE ${PORT}
