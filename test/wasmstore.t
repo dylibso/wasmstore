@@ -19,6 +19,10 @@ Add wasm module `b`
   $ wasmstore add b.wasm
   d926c50304238d423d63f52f5f460b1a7170fe870e10f031b9cbd74b29bc06e5
 
+Store contains `b`
+  $ wasmstore contains b.wasm
+  true
+
 Make sure the store contains the hash and path
   $ wasmstore contains b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31
   true
@@ -109,8 +113,12 @@ Backup
   ./objects/65/8830c0dfcc89d80c695357f0774eb20ca47adb4286eedd52eb527f9cf03fd5
 
 Add `a` again
-  $ wasmstore add a.wasm
+  $ wasmstore add a.wasm testing/123
   b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31
+
+Contains `a`
+  $ wasmstore contains testing/123
+  true
 
 Remove `a` by hash
   $ wasmstore remove b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31
@@ -120,7 +128,7 @@ No longer contains `a`
   false
 
 No longer contains `a`
-  $ wasmstore contains a.wasm
+  $ wasmstore contains testing/123
   false
 
 No longer contains `a`
