@@ -7,5 +7,5 @@ edition = "2021"
 crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
-wasmparser = "0.112"
+wasmparser = "0.113"
 
