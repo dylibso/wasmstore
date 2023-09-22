@@ -20,7 +20,7 @@ Add wasm module `b`
   d926c50304238d423d63f52f5f460b1a7170fe870e10f031b9cbd74b29bc06e5
 
 Make sure the store contains the hash and path
-  $ wasmstore contains 0312a97e84150ab77401b72f951f8af63a05062781ce06c905d5626c615d1bc2
+  $ wasmstore contains b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31
   true
   $ wasmstore contains a.wasm
   true
@@ -108,3 +108,17 @@ Backup
   $ tar tzf ./backup.tar.gz | grep 'objects/65/8830c0dfcc89d80c695357f0774eb20ca47adb4286eedd52eb527f9cf03fd5'
   ./objects/65/8830c0dfcc89d80c695357f0774eb20ca47adb4286eedd52eb527f9cf03fd5
 
+Add `a` again
+  $ wasmstore add a.wasm
+  b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31
+
+Remove `a` by hash
+  $ wasmstore remove b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31
+
+No longer contains `a`
+  $ wasmstore contains b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31
+  false
+
+No longer contains `a`
+  $ wasmstore contains a.wasm
+  false
