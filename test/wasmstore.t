@@ -122,3 +122,7 @@ No longer contains `a`
 No longer contains `a`
   $ wasmstore contains a.wasm
   false
+
+No longer contains `a`
+  $ wasmstore find b6b033aa8c568449d19e0d440cd31f8fcebaebc9c28070e09073275d8062be31 > /dev/null
+  [1]

@@ -184,13 +184,30 @@ let set t path hash =
       Error.throw (`Msg "A hash path should not be used with `set` command"))
     ~path:f path
 
-let find_hash { db; _ } hash = Store.Contents.of_hash (Store.repo db) hash
+let hash_eq = Irmin.Type.(unstage (equal Store.Hash.t))
+
+let contains_hash t hash =
+  let rec aux tree =
+    match Store.Tree.destruct tree with
+    | `Contents (c, _) ->
+        let hash' = Store.Tree.Contents.hash c in
+        Lwt.return @@ hash_eq hash hash'
+    | `Node _ ->
+        let* items = Store.Tree.list tree [] in
+        Lwt_list.exists_p (fun (_, tree') -> aux tree') items
+  in
+  let* tree = Store.tree t.db in
+  aux tree
+
+let find_hash t hash =
+  let* contains = contains_hash t hash in
+  if contains then Store.Contents.of_hash (Store.repo t.db) hash
+  else Lwt.return_none
+
 let find t path = hash_or_path ~hash:(find_hash t) ~path:(Store.find t.db) path
 
 let hash t path =
   hash_or_path ~hash:(fun x -> Lwt.return_some x) ~path:(Store.hash t.db) path
-
-let hash_eq = Irmin.Type.(unstage (equal Store.Hash.t))
 
 let remove t path =
   let info = info t "Remove %a" (Irmin.Type.pp Store.Path.t) path in
@@ -237,19 +254,6 @@ let list { db; _ } path =
     List.flatten items
   in
   aux path
-
-let contains_hash t hash =
-  let rec aux tree =
-    match Store.Tree.destruct tree with
-    | `Contents (c, _) ->
-        let hash' = Store.Tree.Contents.hash c in
-        Lwt.return @@ hash_eq hash hash'
-    | `Node _ ->
-        let* items = Store.Tree.list tree [] in
-        Lwt_list.exists_p (fun (_, tree') -> aux tree') items
-  in
-  let* tree = Store.tree t.db in
-  aux tree
 
 let contains t path =
   hash_or_path
