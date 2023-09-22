@@ -25,11 +25,13 @@
 
 (rule
  (targets libwasm.a dllwasm.so)
- (deps (glob_files *.rs))
+ (deps
+  (glob_files *.rs))
  (action
   (progn
    (run sh -c "cd %{project_root}/../.. && cargo build --release")
-   (run sh -c
-     "mv %{project_root}/../../target/release/libwasm.so ./dllwasm.so 2> /dev/null || \
-      mv %{project_root}/../../target/release/libwasm.dylib ./dllwasm.so")
+   (run
+    sh
+    -c
+    "mv %{project_root}/../../target/release/libwasm.so ./dllwasm.so 2> /dev/null || mv %{project_root}/../../target/release/libwasm.dylib ./dllwasm.so")
    (run mv %{project_root}/../../target/release/libwasm.a libwasm.a))))

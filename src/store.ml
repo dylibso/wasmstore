@@ -89,13 +89,31 @@ let path_of_hash hash =
   let b = String.sub hash' 2 (String.length hash' - 2) in
   "objects" // a // b
 
+let hash_eq = Irmin.Type.(unstage (equal Store.Hash.t))
+
+let contains_hash t hash =
+  let rec aux tree =
+    match Store.Tree.destruct tree with
+    | `Contents (c, _) ->
+        let hash' = Store.Tree.Contents.hash c in
+        Lwt.return @@ hash_eq hash hash'
+    | `Node _ ->
+        let* items = Store.Tree.list tree [] in
+        Lwt_list.exists_p (fun (_, tree') -> aux tree') items
+  in
+  let* tree = Store.tree t.db in
+  aux tree
+
 let get_hash_and_filename t path =
   let* hash = hash_or_path ~hash:Lwt.return_some ~path:(Store.hash t.db) path in
   match hash with
   | None -> Lwt.return_none
   | Some hash ->
-      let path = path_of_hash hash in
-      Lwt.return_some (hash, path)
+      let+ exists = contains_hash t hash in
+      if exists then
+        let path = path_of_hash hash in
+        Some (hash, path)
+      else None
 
 let set_path t path hash =
   let* tree = Store.Tree.of_hash (repo t) (`Contents (hash, ())) in
@@ -184,35 +202,41 @@ let set t path hash =
       Error.throw (`Msg "A hash path should not be used with `set` command"))
     ~path:f path
 
-let find_hash { db; _ } hash = Store.Contents.of_hash (Store.repo db) hash
+let find_hash t hash =
+  let* contains = contains_hash t hash in
+  if contains then Store.Contents.of_hash (Store.repo t.db) hash
+  else Lwt.return_none
+
 let find t path = hash_or_path ~hash:(find_hash t) ~path:(Store.find t.db) path
 
 let hash t path =
   hash_or_path ~hash:(fun x -> Lwt.return_some x) ~path:(Store.hash t.db) path
 
-let hash_eq = Irmin.Type.(unstage (equal Store.Hash.t))
-
 let remove t path =
   let info = info t "Remove %a" (Irmin.Type.pp Store.Path.t) path in
   let hash h =
     (* Search through the current tree for any contents that match [h] *)
-    let rec aux tree path =
+    let rec aux tree =
       match Store.Tree.destruct tree with
       | `Contents (c, _) ->
           let hash = Store.Tree.Contents.hash c in
-          if hash_eq hash h then Store.Tree.remove tree path
-          else Lwt.return tree
+          if hash_eq hash h then Store.Tree.remove tree [] else Lwt.return tree
       | `Node _ ->
           let* items = Store.Tree.list tree [] in
           Lwt_list.fold_left_s
-            (fun tree -> function p, _ -> aux tree (Store.Path.rcons path p))
+            (fun tree -> function
+              | p, tree' ->
+                  let* x = aux tree' in
+                  Store.Tree.add_tree tree [ p ] x)
             tree items
     in
     let* tree = Store.tree t.db in
-    let* tree = aux tree [] in
+    let is_empty = Store.Tree.is_empty tree in
+    let* tree' = aux tree in
     Error.mk_lwt @@ fun () ->
-    Store.test_and_set_tree_exn t.db path ~test:(Some tree) ~set:(Some tree)
-      ~info
+    Store.test_and_set_tree_exn t.db []
+      ~test:(if is_empty then None else Some tree)
+      ~set:(Some tree') ~info
   in
   hash_or_path ~path:(Store.remove_exn t.db ~info) ~hash path
 
@@ -233,12 +257,6 @@ let list { db; _ } path =
     List.flatten items
   in
   aux path
-
-let contains_hash t hash =
-  let+ res =
-    get_hash_and_filename t [ Irmin.Type.to_string Store.Hash.t hash ]
-  in
-  Option.is_some res
 
 let contains t path =
   hash_or_path

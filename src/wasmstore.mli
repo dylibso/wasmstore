@@ -47,28 +47,34 @@ val store : t -> Store.t
 val repo : t -> Store.repo
 (** [repo t] returns the underlying irmin repo *)
 
-val v : ?author:string -> ?branch:string -> string -> env:Eio_unix.Stdenv.base -> t Lwt.t
+val v :
+  ?author:string ->
+  ?branch:string ->
+  string ->
+  env:Eio_unix.Stdenv.base ->
+  t Lwt.t
 (** [v ~branch root] opens a store open to [branch] on disk at [root] *)
 
 val snapshot : t -> Store.commit Lwt.t
 (** [snapshot t] gets the current head commit *)
 
 val restore : t -> ?path:string list -> Store.commit -> unit Lwt.t
-(** [restore t commit] sets the head commit, if [path] is provided then only the specfied path
-    will be reverted *)
+(** [restore t commit] sets the head commit, if [path] is provided then only the
+    specfied path will be reverted *)
 
 val rollback : t -> ?path:string list -> int -> unit Lwt.t
-(** [rollback t n] sets the head commit to [n] commits in the past, if [path] is provided then only the specfied 
-    path will be reverted *)
+(** [rollback t n] sets the head commit to [n] commits in the past, if [path] is
+    provided then only the specfied path will be reverted *)
 
 val find : t -> string list -> string option Lwt.t
-(** [find t path] returns the module associated with [path], if path is a single-item list containing 
-    the string representation of the hash then the module will be located using the hash instead. This
-    goes for all functions that accept [path] arguments unless otherwise noted. *)
+(** [find t path] returns the module associated with [path], if path is a
+    single-item list containing the string representation of the hash then the
+    module will be located using the hash instead. This goes for all functions
+    that accept [path] arguments unless otherwise noted. *)
 
 val add : t -> string list -> string -> hash Lwt.t
-(** [add t path wasm_module] sets [path] to [wasm_module] after verifying the module. If [path] is a hash
-    then it will be converted to "[$HASH].wasm". *)
+(** [add t path wasm_module] sets [path] to [wasm_module] after verifying the
+    module. If [path] is a hash then it will be converted to "[$HASH].wasm". *)
 
 val set : t -> string list -> hash -> unit Lwt.t
 (** [set t path hash] sets [path] to an existing [hash] *)
@@ -77,15 +83,15 @@ val import : t -> string list -> string Lwt_stream.t -> hash Lwt.t
 (** [import t path stream] adds a WebAssembly module from the given stream *)
 
 val hash : t -> string list -> hash option Lwt.t
-(** [hash t path] returns the hash associated the the value stored at [path],
-    if it exists *)
+(** [hash t path] returns the hash associated the the value stored at [path], if
+    it exists *)
 
 val remove : t -> string list -> unit Lwt.t
 (** [remove t path] deletes [path] *)
 
 val list : t -> string list -> (string list * hash) list Lwt.t
-(** [list t path] returns a list of modules stored under [path]. This function does not accept
-    a hash parameter in place of [path] *)
+(** [list t path] returns a list of modules stored under [path]. This function
+    does not accept a hash parameter in place of [path] *)
 
 val contains : t -> string list -> bool Lwt.t
 (** [contains t path] returns true if [path] exists *)
@@ -94,14 +100,14 @@ val gc : t -> int Lwt.t
 (** [gc t] runs the GC and returns the number of objects deleted.
 
     When the gc is executed for a branch all prior commits are squashed into one
-    and all non-reachable objects are removed. For example, if an object is still
-    reachable from another branch it will not be deleted. Because of this, running
-    the garbage collector may purge prior commits, potentially causing `restore`
-    to fail. *)
+    and all non-reachable objects are removed. For example, if an object is
+    still reachable from another branch it will not be deleted. Because of this,
+    running the garbage collector may purge prior commits, potentially causing
+    `restore` to fail. *)
 
 val get_hash_and_filename : t -> string list -> (hash * string) option Lwt.t
-(** [get_hash_and_filename t path] returns a tuple containing the hash and the filename
-    of the object disk relative to the root path *)
+(** [get_hash_and_filename t path] returns a tuple containing the hash and the
+    filename of the object disk relative to the root path *)
 
 val merge : t -> string -> (unit, Irmin.Merge.conflict) result Lwt.t
 (** [merge t branch] merges [branch] into [t] *)
@@ -160,13 +166,14 @@ module Server : sig
     ?port:int ->
     t ->
     unit Lwt.t
-  (** [run ~cors ~auth ~host ~port t] starts the server on [host:port]
-      If [auth] is empty then no authentication is required, otherwise the client should
+  (** [run ~cors ~auth ~host ~port t] starts the server on [host:port] If [auth]
+      is empty then no authentication is required, otherwise the client should
       provide a key using the [Wasmstore-Auth] header. [auth] is a mapping from
       authentication keys to allowed request methods (or [*] as a shortcut for
-      any method). The `cors` parameters will enable CORS when set to true, allowing for
-      browser-based Javascript clients to make requests agains the database.
+      any method). The `cors` parameters will enable CORS when set to true,
+      allowing for browser-based Javascript clients to make requests agains the
+      database.
 
-      Additionally, the [Wasmstore-Branch] header can used to determine which branch
-      to access on any non-[/branch] endpoints *)
+      Additionally, the [Wasmstore-Branch] header can used to determine which
+      branch to access on any non-[/branch] endpoints *)
 end

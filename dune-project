@@ -29,7 +29,7 @@
    lwt
    lwt_eio
    eio_main
-   cohttp-lwt-unix
+   (cohttp-lwt-unix (>= "6.0.0~alpha2"))
    fmt
    logs
    websocket
