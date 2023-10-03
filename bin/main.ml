@@ -236,9 +236,9 @@ let merge =
 
 let gc =
   let cmd store =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
-    let+ res = gc t in
+    let res = gc t in
     Printf.printf "%d\n" res
   in
   let doc = "cleanup modules that are no longer referenced" in
@@ -423,7 +423,7 @@ let watch =
   let cmd store command =
     run @@ fun env ->
     let t = store env in
-    let* _w = watch t (run_command command) in
+    let _w = watch t (run_command command) in
     let t, _ = Lwt.task () in
     t
   in

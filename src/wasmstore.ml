@@ -5,4 +5,4 @@ module Server = Server
 module Error = Error
 
 let watch = Diff.watch
-let unwatch = Store.unwatch
+let unwatch = Diff.unwatch

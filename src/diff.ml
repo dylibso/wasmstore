@@ -74,6 +74,9 @@ let string_of_diff t d =
   Yojson.Safe.to_string j
 
 let watch t f =
+  Lwt_eio.run_lwt @@ fun () ->
   Store.watch t.db (fun diff ->
       let* j = json_of_diff t diff in
       f j)
+
+let unwatch w = Lwt_eio.run_lwt @@ fun () -> Store.unwatch w

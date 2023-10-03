@@ -185,7 +185,7 @@ let v1 t ~headers ~body ~req = function
       delete_module t ~headers path
   | `POST, `V1 [ "gc" ] ->
       let* () = Body.drain_body body in
-      let* _ = gc t in
+      let _ = gc t in
       response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
   | `POST, `V1 [ "merge"; from_branch ] -> (
       let* () = Body.drain_body body in
@@ -274,11 +274,9 @@ let v1 t ~headers ~body ~req = function
       let* a, send =
         Server_websocket.upgrade_connection req (fun msg ->
             if msg.opcode = Websocket.Frame.Opcode.Close then
-              match !w with
-              | Some w -> Lwt.async (fun () -> Store.unwatch w)
-              | None -> ())
+              match !w with Some w -> Diff.unwatch w | None -> ())
       in
-      let+ watch =
+      let watch =
         watch t (fun diff ->
             Lwt.catch
               (fun () ->
@@ -293,7 +291,7 @@ let v1 t ~headers ~body ~req = function
                 | None -> Lwt.return_unit))
       in
       w := Some watch;
-      a
+      Lwt.return a
   | _, `V1 [ "auth" ] ->
       let* () = Body.drain_body body in
       response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()

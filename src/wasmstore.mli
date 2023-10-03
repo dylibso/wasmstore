@@ -92,7 +92,7 @@ val list : t -> string list -> (string list * hash) list
 val contains : t -> string list -> bool
 (** [contains t path] returns true if [path] exists *)
 
-val gc : t -> int Lwt.t
+val gc : t -> int
 (** [gc t] runs the GC and returns the number of objects deleted.
 
     When the gc is executed for a branch all prior commits are squashed into one
@@ -114,10 +114,10 @@ val with_branch : t -> string -> t
 val with_author : t -> string -> t
 (** [with_author t name] returns a copy of [t] with [name] as the current author *)
 
-val watch : t -> (Yojson.Safe.t -> unit Lwt.t) -> Store.watch Lwt.t
+val watch : t -> (Yojson.Safe.t -> unit Lwt.t) -> Store.watch
 (** [watch t f] creates a new watch that calls [f] for each new commit *)
 
-val unwatch : Store.watch -> unit Lwt.t
+val unwatch : Store.watch -> unit
 (** [unwatch w] unregisters and disables the watch [w] *)
 
 val versions : t -> string list -> (hash * [ `Commit of hash ]) list Lwt.t
