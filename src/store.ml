@@ -61,8 +61,11 @@ let snapshot { db; _ } = Lwt_eio.run_lwt @@ fun () -> Store.Head.get db
 
 let restore t ?path commit =
   match path with
-  | None | Some [] -> Error.mk_lwt @@ fun () -> Store.Head.set t.db commit
+  | None | Some [] ->
+      Error.mk @@ fun () ->
+      Lwt_eio.run_lwt @@ fun () -> Store.Head.set t.db commit
   | Some path ->
+      Lwt_eio.run_lwt @@ fun () ->
       let info = info t "Restore %a" (Irmin.Type.pp Store.Path.t) path in
       let parents = Store.Commit.parents commit in
       let* parents =
@@ -75,11 +78,14 @@ let restore t ?path commit =
 
 let tree_opt_equal = Irmin.Type.(unstage (equal (option Store.Tree.t)))
 
-let rollback t ?(path = []) n : unit Lwt.t =
-  let* lm = Store.last_modified ~n:(n + 1) t.db path in
+let rollback t ?(path = []) n : unit =
+  let lm =
+    Lwt_eio.run_lwt @@ fun () -> Store.last_modified ~n:(n + 1) t.db path
+  in
   match List.rev lm with
   | commit :: _ :: _ -> restore t ~path commit
   | [ _ ] | [] ->
+      Lwt_eio.run_lwt @@ fun () ->
       let info = info t "Rollback %a" Irmin.Type.(pp Store.Path.t) path in
       Error.mk_lwt @@ fun () ->
       Store.with_tree_exn ~info t.db path (fun _ -> Lwt.return_none)

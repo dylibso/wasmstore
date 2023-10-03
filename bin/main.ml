@@ -280,19 +280,17 @@ let snapshot =
 
 let restore =
   let cmd store commit path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
     let hash = Irmin.Type.of_string Store.Hash.t commit in
     match hash with
-    | Error _ ->
-        Printf.fprintf stderr "ERROR invalid hash\n";
-        Lwt.return_unit
+    | Error _ -> Printf.fprintf stderr "ERROR invalid hash\n"
     | Ok hash -> (
-        let* commit = Store.Commit.of_hash (repo t) hash in
+        let commit =
+          Lwt_eio.run_lwt @@ fun () -> Store.Commit.of_hash (repo t) hash
+        in
         match commit with
-        | None ->
-            Printf.fprintf stderr "ERROR invalid commit\n";
-            Lwt.return_unit
+        | None -> Printf.fprintf stderr "ERROR invalid commit\n"
         | Some commit -> restore ?path t commit)
   in
   let doc = "restore to a previous commit" in
@@ -302,7 +300,7 @@ let restore =
 
 let rollback =
   let cmd store path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
     rollback ?path t 1
   in

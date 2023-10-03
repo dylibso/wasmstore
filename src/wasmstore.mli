@@ -54,11 +54,11 @@ val v :
 val snapshot : t -> Store.commit
 (** [snapshot t] gets the current head commit *)
 
-val restore : t -> ?path:string list -> Store.commit -> unit Lwt.t
+val restore : t -> ?path:string list -> Store.commit -> unit
 (** [restore t commit] sets the head commit, if [path] is provided then only the
     specfied path will be reverted *)
 
-val rollback : t -> ?path:string list -> int -> unit Lwt.t
+val rollback : t -> ?path:string list -> int -> unit
 (** [rollback t n] sets the head commit to [n] commits in the past, if [path] is
     provided then only the specfied path will be reverted *)
 

@@ -145,6 +145,7 @@ let require_auth t ~body ~auth ~headers req ~v1 =
 (** [/api/v1] endpoints *)
 let v1 t ~headers ~body ~req = function
   | `GET, `V1 ("commit" :: [ hash ]) -> (
+      let* () = Body.drain_body body in
       let hash' = Irmin.Type.of_string Hash.t hash in
       let fail body status =
         response @@ Server.respond_string ~headers ~status ~body ()
@@ -186,6 +187,7 @@ let v1 t ~headers ~body ~req = function
       let* _ = gc t in
       response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
   | `POST, `V1 [ "merge"; from_branch ] -> (
+      let* () = Body.drain_body body in
       let* res = merge t from_branch in
       match res with
       | Ok _ ->
@@ -196,6 +198,7 @@ let v1 t ~headers ~body ~req = function
                ~body:(Irmin.Type.to_string Irmin.Merge.conflict_t r)
                ())
   | `POST, `V1 ("restore" :: hash :: path) -> (
+      let* () = Body.drain_body body in
       let hash = Irmin.Type.of_string Store.Hash.t hash in
       match hash with
       | Error _ ->
@@ -210,19 +213,22 @@ let v1 t ~headers ~body ~req = function
               @@ Server.respond_string ~headers ~status:`Not_found
                    ~body:"commit not found" ()
           | Some commit ->
-              let* () = restore ~path t commit in
+              let* () = Lwt_eio.run_eio @@ fun () -> restore ~path t commit in
               response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
           ))
   | `POST, `V1 ("rollback" :: path) ->
-      let* () = rollback t ~path 1 in
+      let* () = Body.drain_body body in
+      let () = rollback t ~path 1 in
       response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
   | `GET, `V1 [ "snapshot" ] ->
+      let* () = Body.drain_body body in
       let commit = snapshot t in
       response
       @@ Server.respond_string ~headers ~status:`OK
            ~body:(Irmin.Type.to_string Store.Hash.t (Store.Commit.hash commit))
            ()
   | `GET, `V1 ("versions" :: path) ->
+      let* () = Body.drain_body body in
       let* versions = versions t path in
       let conv = Irmin.Type.to_string Hash.t in
       let versions =
