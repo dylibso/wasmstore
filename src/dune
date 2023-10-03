@@ -12,6 +12,7 @@
   fmt.tty
   fmt.cli
   logs.cli
+  logs.threaded
   cohttp-lwt-unix
   websocket
   yojson

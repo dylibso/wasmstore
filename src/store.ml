@@ -131,6 +131,7 @@ let set_path t path hash =
       Store.set_tree_exn t.db path tree ~info
 
 let import t path stream =
+  Lwt_eio.run_lwt @@ fun () ->
   let hash = ref (Digestif.SHA256.init ()) in
   let tmp =
     Filename.temp_file ~temp_dir:(root t // "tmp") "wasmstore" "import"
@@ -221,6 +222,7 @@ let find t path =
   hash_or_path ~hash:(find_hash t) ~path:(Store.find t.db) path
 
 let hash t path =
+  Lwt_eio.run_lwt @@ fun () ->
   hash_or_path ~hash:(fun x -> Lwt.return_some x) ~path:(Store.hash t.db) path
 
 let remove t path =
@@ -249,6 +251,7 @@ let remove t path =
       ~test:(if is_empty then None else Some tree)
       ~set:(Some tree') ~info
   in
+  Lwt_eio.run_lwt @@ fun () ->
   hash_or_path ~path:(Store.remove_exn t.db ~info) ~hash path
 
 let list { db; _ } path =

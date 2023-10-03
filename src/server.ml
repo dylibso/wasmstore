@@ -7,6 +7,7 @@ open Cohttp_lwt
 open Cohttp_lwt_unix
 
 let () = Irmin.Backend.Watch.set_listen_dir_hook Irmin_watcher.hook
+let () = Logs_threaded.enable ()
 
 let with_branch' t req =
   let h = Cohttp.Request.headers req in
@@ -40,7 +41,7 @@ let add_module t ~headers body path =
   let data = Body.to_stream body in
   Lwt.catch
     (fun () ->
-      let* hash = import t path data in
+      let hash = import t path data in
       let body = Irmin.Type.to_string Store.Hash.t hash in
       response @@ Server.respond_string ~headers ~status:`OK ~body ())
     (function
@@ -82,11 +83,11 @@ let find_module t ~headers path =
       response @@ Server.respond_string ~headers ~status:`Not_found ~body:"" ()
 
 let delete_module t ~headers path =
-  let* () = remove t path in
+  let () = remove t path in
   response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
 
 let find_hash t ~headers path =
-  let* hash = hash t path in
+  let hash = hash t path in
   match hash with
   | Some hash ->
       let body = Body.of_string (Irmin.Type.to_string Store.Hash.t hash) in
@@ -329,4 +330,7 @@ let run ?tls ?(cors = false) ?auth ?(host = "localhost") ?(port = 6384) t =
   Logs.app (fun l ->
       l "Starting server on %s:%d, cors=%b, tls=%b" host port cors
         (Option.is_some tls));
-  Server.create ~ctx ~on_exn:(fun _ -> ()) ~mode server
+  Server.create ~ctx
+    ~on_exn:(fun exn ->
+      Logs.err (fun l -> l "serve error: %s" (Printexc.to_string exn)))
+    ~mode server

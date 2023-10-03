@@ -75,14 +75,14 @@ val add : t -> string list -> string -> hash
 val set : t -> string list -> hash -> unit
 (** [set t path hash] sets [path] to an existing [hash] *)
 
-val import : t -> string list -> string Lwt_stream.t -> hash Lwt.t
+val import : t -> string list -> string Lwt_stream.t -> hash
 (** [import t path stream] adds a WebAssembly module from the given stream *)
 
-val hash : t -> string list -> hash option Lwt.t
+val hash : t -> string list -> hash option
 (** [hash t path] returns the hash associated the the value stored at [path], if
     it exists *)
 
-val remove : t -> string list -> unit Lwt.t
+val remove : t -> string list -> unit
 (** [remove t path] deletes [path] *)
 
 val list : t -> string list -> (string list * hash) list Lwt.t

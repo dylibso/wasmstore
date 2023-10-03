@@ -158,19 +158,18 @@ let add =
     let path =
       match path with Some p -> p | None -> [ Filename.basename filename ]
     in
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
-    let* data =
+    let data =
+      Lwt_eio.run_lwt @@ fun () ->
       if filename = "-" then stdin_stream () else file_stream filename
     in
-    Lwt.catch
-      (fun () ->
-        let+ hash = import t path data in
-        Format.printf "%a\n" (Irmin.Type.pp Store.hash_t) hash)
-      (function
-        | Validation_error msg ->
-            Lwt_io.fprintlf Lwt_io.stderr "ERROR invalid module: %s" msg
-        | exn -> raise exn)
+    try
+      let hash = import t path data in
+      Format.printf "%a\n" (Irmin.Type.pp Store.hash_t) hash
+    with
+    | Validation_error msg -> Printf.eprintf "ERROR invalid module: %s\n" msg
+    | exn -> raise exn
   in
 
   let doc = "add a WASM module" in
@@ -208,7 +207,7 @@ let filename =
 
 let remove =
   let cmd store path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
     Wasmstore.remove t path
   in
@@ -360,9 +359,9 @@ let commit =
 
 let hash =
   let cmd store path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
-    let+ hash = Wasmstore.hash t path in
+    let hash = Wasmstore.hash t path in
     match hash with
     | None -> exit 1
     | Some hash -> Format.printf "%a\n" (Irmin.Type.pp Store.Hash.t) hash
