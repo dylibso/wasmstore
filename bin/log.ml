@@ -27,7 +27,7 @@ let log store =
   let exception Return in
   let cmd store plain pager num skip reverse =
     run @@ fun env ->
-    let* t = store env in
+    let t = store env in
     let repo = repo t in
     let skip = ref (Option.value ~default:0 skip) in
     let num = Option.value ~default:0 num in
