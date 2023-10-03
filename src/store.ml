@@ -112,6 +112,7 @@ let contains_hash t hash =
   aux tree
 
 let get_hash_and_filename t path =
+  Lwt_eio.run_lwt @@ fun () ->
   let* hash = hash_or_path ~hash:Lwt.return_some ~path:(Store.hash t.db) path in
   match hash with
   | None -> Lwt.return_none
@@ -123,6 +124,7 @@ let get_hash_and_filename t path =
       else None
 
 let set_path t path hash =
+  Lwt_eio.run_lwt @@ fun () ->
   let* tree = Store.Tree.of_hash (repo t) (`Contents (hash, ())) in
   match tree with
   | None -> Error.throw (`Msg "hash mismatch")
@@ -130,43 +132,34 @@ let set_path t path hash =
       let info = info t "Import %a" (Irmin.Type.pp Store.Path.t) path in
       Store.set_tree_exn t.db path tree ~info
 
-let import t path stream =
-  Lwt_eio.run_lwt @@ fun () ->
-  let hash = ref (Digestif.SHA256.init ()) in
+let import t path data =
   let tmp =
     Filename.temp_file ~temp_dir:(root t // "tmp") "wasmstore" "import"
   in
-  let* () =
-    Lwt_io.with_file
-      ~flags:Unix.[ O_CREAT; O_WRONLY ]
-      ~mode:Output tmp
-      (fun oc ->
-        Lwt_stream.iter_s
-          (fun s ->
-            hash := Digestif.SHA256.feed_string !hash s;
-            Lwt_io.write oc s)
-          stream)
-  in
-  let hash = Digestif.SHA256.get !hash in
+  let tmp' = Eio.Path.(Eio.Stdenv.fs t.env / tmp) in
+  let hash = Digestif.SHA256.digest_string data in
   let hash =
     Irmin.Hash.SHA256.unsafe_of_raw_string (Digestif.SHA256.to_raw_string hash)
   in
   let dest = root t // path_of_hash hash in
-  let* exists = Lwt_unix.file_exists dest in
-  let* () =
-    if not exists then
-      let () =
-        try verify_file tmp
-        with e ->
-          Unix.unlink tmp;
-          raise e
-      in
-      let () = try_mkdir ~env:t.env (Filename.dirname dest) in
-      Lwt_unix.rename tmp dest
-    else Lwt.return_unit
-  in
-  let* () = set_path t path hash in
-  Lwt.return hash
+  let dest' = Eio.Path.(Eio.Stdenv.fs t.env / dest) in
+  let exists = Sys.file_exists dest in
+  if exists then
+    let () = set_path t path hash in
+    hash
+  else
+    let () = Eio.Path.save tmp' data ~create:(`Or_truncate 0o655) in
+    let () =
+      try
+        let () = verify_file tmp in
+        let () = try_mkdir ~env:t.env (Filename.dirname dest) in
+        let () = Eio.Path.rename tmp' dest' in
+        set_path t path hash
+      with e ->
+        Eio.Path.(unlink tmp');
+        raise e
+    in
+    hash
 
 let add t path wasm =
   Lwt_eio.run_lwt @@ fun () ->

@@ -129,29 +129,8 @@ let store =
   let aux () root branch author env = v ?author ~branch root ~env in
   Term.(const aux $ setup_log $ root $ branch $ author)
 
-let buf_size = 4096
-
-let rec read_file buf ic f =
-  let* n = Lwt_io.read_into ic buf 0 buf_size in
-  f (Some (Bytes.sub_string buf 0 n));
-  if n < buf_size then
-    let () = f None in
-    Lwt.return_unit
-  else read_file buf ic f
-
-let file_stream filename =
-  let buf = Bytes.create buf_size in
-  let s, push = Lwt_stream.create () in
-  let* () =
-    Lwt_io.with_file ~mode:Input filename (fun ic -> read_file buf ic push)
-  in
-  Lwt.return s
-
-let stdin_stream () =
-  let buf = Bytes.create buf_size in
-  let s, push = Lwt_stream.create () in
-  let* () = read_file buf Lwt_io.stdin push in
-  Lwt.return s
+let read_module_file filename =
+  In_channel.with_open_bin filename In_channel.input_all
 
 let add =
   let cmd store filename path =
@@ -161,8 +140,8 @@ let add =
     run' @@ fun env ->
     let t = store env in
     let data =
-      Lwt_eio.run_lwt @@ fun () ->
-      if filename = "-" then stdin_stream () else file_stream filename
+      if filename = "-" then In_channel.input_all stdin
+      else read_module_file filename
     in
     try
       let hash = import t path data in
@@ -191,14 +170,14 @@ let find =
 
 let filename =
   let cmd store path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
     let config = Store.Repo.config (repo t) in
     let root = Irmin.Backend.Conf.find_root config |> Option.get in
-    let* opt = Wasmstore.get_hash_and_filename t path in
+    let opt = Wasmstore.get_hash_and_filename t path in
     match opt with
     | None -> exit 1
-    | Some (_, filename) -> Lwt_io.printl (Filename.concat root filename)
+    | Some (_, filename) -> print_endline (Filename.concat root filename)
   in
   let doc = "get the path on disk by hash or name" in
   let info = Cmd.info "filename" ~doc in
@@ -385,7 +364,7 @@ let server =
       cmd store host port auth cors tls
   in
   let cmd store host port auth cors tls =
-    run @@ fun env -> cmd (store env) host port auth cors tls
+    run' @@ fun env -> cmd (store env) host port auth cors tls
   in
   let doc = "Run server" in
   let info = Cmd.info "server" ~doc in
@@ -394,15 +373,15 @@ let server =
 
 let branch =
   let cmd () root branch_name delete list =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = v root ~env in
     if list then
-      let+ branches = Branch.list t in
+      let branches = Branch.list t in
       List.iter print_endline branches
     else if delete then Branch.delete t branch_name
     else
-      let* _ = Error.unwrap_lwt @@ Branch.create t branch_name in
-      Lwt.return_unit
+      let _ = Error.unwrap @@ Branch.create t branch_name in
+      ()
   in
   let doc = "Modify a branch" in
   let info = Cmd.info "branch" ~doc in
@@ -413,6 +392,7 @@ let branch =
   Cmd.v info term
 
 let run_command command diff =
+  Lwt_eio.run_lwt @@ fun () ->
   match command with
   | h :: t ->
       let s = Yojson.Safe.to_string diff in
@@ -532,7 +512,7 @@ let export =
     let files = Wasmstore.list t [] in
     Lwt_list.iter_p
       (fun (path, _) ->
-        let* v = Wasmstore.get_hash_and_filename t path in
+        let v = Wasmstore.get_hash_and_filename t path in
         match v with
         | Some (_, filename) ->
             let s = Lwt_io.chars_of_file (root // filename) in

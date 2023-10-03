@@ -21,12 +21,10 @@ module Error : sig
 
   val to_string : t -> string
   val unwrap : ('a, t) result -> 'a
-  val unwrap_lwt : ('a, t) result Lwt.t -> 'a Lwt.t
   val wrap : (unit -> 'a) -> ('a, t) result
-  val wrap_lwt : (unit -> 'a Lwt.t) -> ('a, t) result Lwt.t
   val throw : t -> 'a
-  val catch_lwt : (unit -> 'a Lwt.t) -> (t -> 'a Lwt.t) -> 'a Lwt.t
   val catch : (unit -> 'a) -> (t -> 'a) -> 'a
+  val catch_lwt : (unit -> 'a Lwt.t) -> (t -> 'a Lwt.t) -> 'a Lwt.t
 end
 
 type t
@@ -75,8 +73,8 @@ val add : t -> string list -> string -> hash
 val set : t -> string list -> hash -> unit
 (** [set t path hash] sets [path] to an existing [hash] *)
 
-val import : t -> string list -> string Lwt_stream.t -> hash
-(** [import t path stream] adds a WebAssembly module from the given stream *)
+val import : t -> string list -> string -> hash
+(** [import t path s] adds a WebAssembly module from the given string *)
 
 val hash : t -> string list -> hash option
 (** [hash t path] returns the hash associated the the value stored at [path], if
@@ -101,7 +99,7 @@ val gc : t -> int
     running the garbage collector may purge prior commits, potentially causing
     `restore` to fail. *)
 
-val get_hash_and_filename : t -> string list -> (hash * string) option Lwt.t
+val get_hash_and_filename : t -> string list -> (hash * string) option
 (** [get_hash_and_filename t path] returns a tuple containing the hash and the
     filename of the object disk relative to the root path *)
 
@@ -114,7 +112,7 @@ val with_branch : t -> string -> t
 val with_author : t -> string -> t
 (** [with_author t name] returns a copy of [t] with [name] as the current author *)
 
-val watch : t -> (Yojson.Safe.t -> unit Lwt.t) -> Store.watch
+val watch : t -> (Yojson.Safe.t -> unit) -> Store.watch
 (** [watch t f] creates a new watch that calls [f] for each new commit *)
 
 val unwatch : Store.watch -> unit
@@ -137,17 +135,17 @@ end
 val commit_info : t -> hash -> Commit_info.t option
 
 module Branch : sig
-  val switch : t -> string -> unit Lwt.t
+  val switch : t -> string -> unit
   (** [switch t branch] sets [t]'s branch to [branch] *)
 
-  val create : t -> string -> t Error.res Lwt.t
+  val create : t -> string -> t Error.res
   (** [create t branch] creates a new branch, returning an error result if the
       branch already exists *)
 
-  val delete : t -> string -> unit Lwt.t
+  val delete : t -> string -> unit
   (** [delete t branch] destroys [branch] *)
 
-  val list : t -> string list Lwt.t
+  val list : t -> string list
   (** [list t] returns a list of all branches *)
 end
 
@@ -159,7 +157,7 @@ module Server : sig
     ?host:string ->
     ?port:int ->
     t ->
-    unit Lwt.t
+    unit
   (** [run ~cors ~auth ~host ~port t] starts the server on [host:port] If [auth]
       is empty then no authentication is required, otherwise the client should
       provide a key using the [Wasmstore-Auth] header. [auth] is a mapping from

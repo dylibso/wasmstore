@@ -31,16 +31,16 @@ let list_modules t ~headers path =
   response @@ Server.respond_string ~status:`OK ~headers ~body ()
 
 let list_branches t ~headers =
-  let* branches = Branch.list t in
+  let branches = Branch.list t in
   let body =
     Body.of_string (Irmin.Type.(to_json_string (list string)) branches)
   in
   response @@ Server.respond ~headers ~body ~status:`OK ()
 
 let add_module t ~headers body path =
-  let data = Body.to_stream body in
   Lwt.catch
     (fun () ->
+      let* data = Body.to_string body in
       let hash = import t path data in
       let body = Irmin.Type.to_string Store.Hash.t hash in
       response @@ Server.respond_string ~headers ~status:`OK ~body ())
@@ -70,7 +70,7 @@ let set_hash t ~headers hash path =
            ~body:"invalid hash" ()
 
 let find_module t ~headers path =
-  let* filename = get_hash_and_filename t path in
+  let filename = get_hash_and_filename t path in
   match filename with
   | Some (hash, filename) ->
       let headers =
@@ -254,10 +254,10 @@ let v1 t ~headers ~body ~req = function
       let* () = Body.drain_body body in
       list_branches t ~headers
   | `PUT, `V1 [ "branch"; branch ] ->
-      let* () = Branch.switch t branch in
+      let () = Branch.switch t branch in
       response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
   | `POST, `V1 [ "branch"; branch ] -> (
-      let* res = Branch.create t branch in
+      let res = Branch.create t branch in
       match res with
       | Ok _ ->
           response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
@@ -265,7 +265,7 @@ let v1 t ~headers ~body ~req = function
           response
           @@ Server.respond_string ~headers ~status:`Conflict ~body:s ())
   | `DELETE, `V1 [ "branch"; branch ] ->
-      let* () = Branch.delete t branch in
+      let () = Branch.delete t branch in
       response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
   | `GET, `V1 [ "branch" ] ->
       response @@ Server.respond_string ~headers ~status:`OK ~body:t.branch ()
@@ -278,17 +278,15 @@ let v1 t ~headers ~body ~req = function
       in
       let watch =
         watch t (fun diff ->
-            Lwt.catch
-              (fun () ->
-                let d = Yojson.Safe.to_string diff in
-                Lwt.wrap (fun () ->
-                    send (Some (Websocket.Frame.create ~content:d ()))))
-              (fun _ ->
-                match !w with
-                | Some w' ->
-                    let+ () = Store.unwatch w' in
-                    w := None
-                | None -> Lwt.return_unit))
+            try
+              let d = Yojson.Safe.to_string diff in
+              send (Some (Websocket.Frame.create ~content:d ()))
+            with _ -> (
+              match !w with
+              | Some w' ->
+                  let () = Diff.unwatch w' in
+                  w := None
+              | None -> ()))
       in
       w := Some watch;
       Lwt.return a
@@ -321,6 +319,7 @@ let run ?tls ?(cors = false) ?auth ?(host = "localhost") ?(port = 6384) t =
           Some (`TLS (cert, key, `No_password)) )
     | None -> (`TCP (`Port port), None)
   in
+  Lwt_eio.run_lwt @@ fun () ->
   let* ctx = Conduit_lwt_unix.init ~src:host ?tls_own_key () in
   let ctx = Net.init ~ctx () in
   let callback = callback t ~headers ~auth in
