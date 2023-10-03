@@ -51,7 +51,7 @@ val v :
   ?author:string -> ?branch:string -> string -> env:Eio_unix.Stdenv.base -> t
 (** [v ~branch root] opens a store open to [branch] on disk at [root] *)
 
-val snapshot : t -> Store.commit Lwt.t
+val snapshot : t -> Store.commit
 (** [snapshot t] gets the current head commit *)
 
 val restore : t -> ?path:string list -> Store.commit -> unit Lwt.t

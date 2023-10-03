@@ -217,7 +217,7 @@ let v1 t ~headers ~body ~req = function
       let* () = rollback t ~path 1 in
       response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
   | `GET, `V1 [ "snapshot" ] ->
-      let* commit = snapshot t in
+      let commit = snapshot t in
       response
       @@ Server.respond_string ~headers ~status:`OK
            ~body:(Irmin.Type.to_string Store.Hash.t (Store.Commit.hash commit))

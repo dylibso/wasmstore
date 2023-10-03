@@ -268,9 +268,9 @@ let list =
 
 let snapshot =
   let cmd store =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
-    let+ head = snapshot t in
+    let head = snapshot t in
     print_endline (Irmin.Type.to_string Store.Hash.t (Store.Commit.hash head))
   in
   let doc = "get current head commit hash" in

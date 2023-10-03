@@ -57,7 +57,7 @@ let verify_file filename =
   | Ok () -> ()
   | Error (`Msg e) -> raise (Validation_error e)
 
-let snapshot { db; _ } = Store.Head.get db
+let snapshot { db; _ } = Lwt_eio.run_lwt @@ fun () -> Store.Head.get db
 
 let restore t ?path commit =
   match path with
