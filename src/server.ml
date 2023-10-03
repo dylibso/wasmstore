@@ -55,7 +55,7 @@ let set_hash t ~headers hash path =
   | Ok hash ->
       Lwt.catch
         (fun () ->
-          let* () = set t path hash in
+          let () = set t path hash in
           response @@ Server.respond_string ~headers ~status:`OK ~body:"" ())
         (function
           | Validation_error msg ->

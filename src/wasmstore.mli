@@ -62,17 +62,17 @@ val rollback : t -> ?path:string list -> int -> unit
 (** [rollback t n] sets the head commit to [n] commits in the past, if [path] is
     provided then only the specfied path will be reverted *)
 
-val find : t -> string list -> string option Lwt.t
+val find : t -> string list -> string option
 (** [find t path] returns the module associated with [path], if path is a
     single-item list containing the string representation of the hash then the
     module will be located using the hash instead. This goes for all functions
     that accept [path] arguments unless otherwise noted. *)
 
-val add : t -> string list -> string -> hash Lwt.t
+val add : t -> string list -> string -> hash
 (** [add t path wasm_module] sets [path] to [wasm_module] after verifying the
     module. If [path] is a hash then it will be converted to "[$HASH].wasm". *)
 
-val set : t -> string list -> hash -> unit Lwt.t
+val set : t -> string list -> hash -> unit
 (** [set t path hash] sets [path] to an existing [hash] *)
 
 val import : t -> string list -> string Lwt_stream.t -> hash Lwt.t

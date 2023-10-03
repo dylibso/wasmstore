@@ -180,9 +180,9 @@ let add =
 
 let find =
   let cmd store path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
-    let+ value = find t path in
+    let value = find t path in
     match value with None -> exit 1 | Some value -> print_string value
   in
   let doc = "find a WASM module by hash or name" in
@@ -323,11 +323,11 @@ let contains =
 
 let set =
   let cmd store hash path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
     let hash' = Irmin.Type.of_string Store.Hash.t hash in
     match hash' with
-    | Error _ -> Lwt_io.eprintlf "invalid hash: %s" hash
+    | Error _ -> Printf.eprintf "invalid hash: %s" hash
     | Ok hash -> Wasmstore.set t path hash
   in
   let doc = "set a path to point to an existing hash" in

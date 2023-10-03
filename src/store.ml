@@ -168,6 +168,7 @@ let import t path stream =
   Lwt.return hash
 
 let add t path wasm =
+  Lwt_eio.run_lwt @@ fun () ->
   let () = verify_string wasm in
   let info = info t "Add %a" (Irmin.Type.pp Store.Path.t) path in
   let f hash =
@@ -190,6 +191,7 @@ let add t path wasm =
   Store.Contents.hash wasm
 
 let set t path hash =
+  Lwt_eio.run_lwt @@ fun () ->
   let* tree = Store.Tree.of_hash (repo t) (`Contents (hash, ())) in
   let f path =
     match tree with
@@ -214,7 +216,9 @@ let find_hash t hash =
   if contains then Store.Contents.of_hash (Store.repo t.db) hash
   else Lwt.return_none
 
-let find t path = hash_or_path ~hash:(find_hash t) ~path:(Store.find t.db) path
+let find t path =
+  Lwt_eio.run_lwt @@ fun () ->
+  hash_or_path ~hash:(find_hash t) ~path:(Store.find t.db) path
 
 let hash t path =
   hash_or_path ~hash:(fun x -> Lwt.return_some x) ~path:(Store.hash t.db) path
