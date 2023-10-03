@@ -120,10 +120,8 @@ val watch : t -> (Yojson.Safe.t -> unit Lwt.t) -> Store.watch
 val unwatch : Store.watch -> unit
 (** [unwatch w] unregisters and disables the watch [w] *)
 
-val versions : t -> string list -> (hash * [ `Commit of hash ]) list Lwt.t
-
-val version :
-  t -> string list -> int -> (hash * [ `Commit of hash ]) option Lwt.t
+val versions : t -> string list -> (hash * [ `Commit of hash ]) list
+val version : t -> string list -> int -> (hash * [ `Commit of hash ]) option
 
 module Commit_info : sig
   type t = {

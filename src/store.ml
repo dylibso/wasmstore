@@ -294,6 +294,7 @@ module Hash_set = Set.Make (struct
 end)
 
 let versions t path =
+  Lwt_eio.run_lwt @@ fun () ->
   let* lm = Store.last_modified t.db ~n:max_int path in
   let hashes = ref Hash_set.empty in
   Lwt_list.filter_map_s
@@ -310,7 +311,7 @@ let versions t path =
     lm
 
 let version t path index =
-  let+ versions = versions t path in
+  let versions = versions t path in
   List.nth_opt versions index
 
 module Commit_info = struct

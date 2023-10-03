@@ -461,15 +461,14 @@ let audit =
 
 let versions =
   let cmd store path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
-    let* versions = versions t path in
+    let versions = versions t path in
     List.iter
       (fun (k, `Commit v) ->
         Fmt.pr "%a\tcommit: %a\n" (Irmin.Type.pp Hash.t) k
           (Irmin.Type.pp Hash.t) v)
-      versions;
-    Lwt.return_unit
+      versions
   in
   let doc = "list previous versions of a path" in
   let info = Cmd.info "versions" ~doc in
@@ -478,9 +477,9 @@ let versions =
 
 let version =
   let cmd store path v =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
-    let+ version = version t path v in
+    let version = version t path v in
     match version with
     | Some (k, `Commit v) ->
         Fmt.pr "%a\tcommit: %a\n" (Irmin.Type.pp Hash.t) k

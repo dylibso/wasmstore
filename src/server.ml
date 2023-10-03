@@ -230,7 +230,7 @@ let v1 t ~headers ~body ~req = function
            ()
   | `GET, `V1 ("versions" :: path) ->
       let* () = Body.drain_body body in
-      let* versions = versions t path in
+      let versions = versions t path in
       let conv = Irmin.Type.to_string Hash.t in
       let versions =
         List.map
@@ -242,7 +242,7 @@ let v1 t ~headers ~body ~req = function
       response @@ Server.respond ~headers ~body ~status:`OK ()
   | `GET, `V1 ("version" :: v :: path) -> (
       let* () = Body.drain_body body in
-      let* version = version t path (int_of_string v) in
+      let version = version t path (int_of_string v) in
       match version with
       | None -> response @@ Server.respond_not_found ()
       | Some (_, `Commit commit) ->
