@@ -85,11 +85,11 @@ val hash : t -> string list -> hash option
 val remove : t -> string list -> unit
 (** [remove t path] deletes [path] *)
 
-val list : t -> string list -> (string list * hash) list Lwt.t
+val list : t -> string list -> (string list * hash) list
 (** [list t path] returns a list of modules stored under [path]. This function
     does not accept a hash parameter in place of [path] *)
 
-val contains : t -> string list -> bool Lwt.t
+val contains : t -> string list -> bool
 (** [contains t path] returns true if [path] exists *)
 
 val gc : t -> int Lwt.t
@@ -105,7 +105,7 @@ val get_hash_and_filename : t -> string list -> (hash * string) option Lwt.t
 (** [get_hash_and_filename t path] returns a tuple containing the hash and the
     filename of the object disk relative to the root path *)
 
-val merge : t -> string -> (unit, Irmin.Merge.conflict) result Lwt.t
+val merge : t -> string -> (unit, Irmin.Merge.conflict) result
 (** [merge t branch] merges [branch] into [t] *)
 
 val with_branch : t -> string -> t

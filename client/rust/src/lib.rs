@@ -341,8 +341,9 @@ mod tests {
         let hash = client.snapshot().await.unwrap();
         client.commit_info(&hash).await.unwrap();
 
+        assert!(client.contains("test.wasm").await.unwrap());
         client.remove("test.wasm").await.unwrap();
-        assert!(client.find("test.wasm").await.unwrap().is_none());
+        assert!(!client.contains("test.wasm").await.unwrap());
         println!("Restore {:?}", hash);
         client.restore(&hash).await.unwrap();
 

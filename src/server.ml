@@ -19,7 +19,7 @@ let response x =
   `Response x
 
 let list_modules t ~headers path =
-  let* modules = list t path in
+  let modules = list t path in
   let modules =
     List.map
       (fun (k, v) ->
@@ -168,7 +168,7 @@ let v1 t ~headers ~body ~req = function
       find_module t ~headers path
   | `HEAD, `V1 ("module" :: path) ->
       let* () = Body.drain_body body in
-      let* exists = contains t path in
+      let exists = contains t path in
       response
       @@ Server.respond_string ~headers
            ~status:(if exists then `OK else `Not_found)
@@ -189,7 +189,7 @@ let v1 t ~headers ~body ~req = function
       response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
   | `POST, `V1 [ "merge"; from_branch ] -> (
       let* () = Body.drain_body body in
-      let* res = merge t from_branch in
+      let res = merge t from_branch in
       match res with
       | Ok _ ->
           response @@ Server.respond_string ~status:`OK ~headers ~body:"" ()

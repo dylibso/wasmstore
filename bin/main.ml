@@ -218,14 +218,14 @@ let remove =
 
 let merge =
   let cmd store branch_from =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
-    let+ res = merge t branch_from in
+    let res = merge t branch_from in
     match res with
     | Ok () -> ()
     | Error e ->
         let stderr = Format.formatter_of_out_channel stderr in
-        Format.fprintf stderr "ERROR %a"
+        Format.fprintf stderr "ERROR %a\n"
           (Irmin.Type.pp Irmin.Merge.conflict_t)
           e
   in
@@ -248,9 +248,9 @@ let gc =
 
 let list =
   let cmd store path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
-    let+ items = list t path in
+    let items = list t path in
     List.iter
       (fun (path, hash) ->
         Format.printf "%a\t%a\n"
@@ -310,9 +310,9 @@ let rollback =
 
 let contains =
   let cmd store path =
-    run @@ fun env ->
+    run' @@ fun env ->
     let t = store env in
-    let+ value = contains t path in
+    let value = contains t path in
     Format.printf "%b\n" value
   in
   let doc = "check if a WASM module exists by hash or name" in
@@ -326,7 +326,7 @@ let set =
     let t = store env in
     let hash' = Irmin.Type.of_string Store.Hash.t hash in
     match hash' with
-    | Error _ -> Printf.eprintf "invalid hash: %s" hash
+    | Error _ -> Printf.eprintf "invalid hash: %s\n" hash
     | Ok hash -> Wasmstore.set t path hash
   in
   let doc = "set a path to point to an existing hash" in
@@ -530,7 +530,7 @@ let export =
     let root =
       Irmin.Backend.Conf.get (Store.Repo.config repo) Irmin_fs.Conf.Key.root
     in
-    let* files = Wasmstore.list t [] in
+    let files = Wasmstore.list t [] in
     Lwt_list.iter_p
       (fun (path, _) ->
         let* v = Wasmstore.get_hash_and_filename t path in

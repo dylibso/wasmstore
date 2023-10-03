@@ -270,15 +270,17 @@ let list { db; _ } path =
     in
     List.flatten items
   in
-  aux path
+  Lwt_eio.run_lwt @@ fun () -> aux path
 
 let contains t path =
+  Lwt_eio.run_lwt @@ fun () ->
   hash_or_path
     ~hash:(fun h -> contains_hash t h)
     ~path:(fun path -> Store.mem t.db path)
     path
 
 let merge t branch =
+  Lwt_eio.run_lwt @@ fun () ->
   let info = info t "Merge %s" branch in
   Store.merge_with_branch t.db ~info branch
 
