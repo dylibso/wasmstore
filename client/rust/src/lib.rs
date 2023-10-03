@@ -339,7 +339,7 @@ mod tests {
         let data1 = client.find("test.wasm").await.unwrap();
 
         let hash = client.snapshot().await.unwrap();
-        client.commit_info(&hash).await.unwrap();
+        assert_eq!(client.commit_info(&hash).await.unwrap().hash, hash);
 
         assert!(client.contains("test.wasm").await.unwrap());
         client.remove("test.wasm").await.unwrap();

@@ -134,7 +134,7 @@ module Commit_info : sig
   [@@deriving irmin]
 end
 
-val commit_info : t -> hash -> Commit_info.t option Lwt.t
+val commit_info : t -> hash -> Commit_info.t option
 
 module Branch : sig
   val switch : t -> string -> unit Lwt.t

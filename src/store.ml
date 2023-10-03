@@ -326,7 +326,8 @@ module Commit_info = struct
 end
 
 let commit_info t hash =
-  let* commit =
+  let commit =
+    Lwt_eio.run_lwt @@ fun () ->
     Lwt.catch
       (fun () -> Store.Commit.of_hash (repo t) hash)
       (function Assert_failure _ -> Lwt.return_none | exn -> raise exn)
@@ -335,7 +336,7 @@ let commit_info t hash =
   | Some commit ->
       let parents = Store.Commit.parents commit in
       let info = Store.Commit.info commit in
-      Lwt.return_some
+      Some
         Commit_info.
           {
             hash;
@@ -344,4 +345,4 @@ let commit_info t hash =
             date = Store.Info.date info;
             message = Store.Info.message info;
           }
-  | None -> Lwt.return_none
+  | None -> None

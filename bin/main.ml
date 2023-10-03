@@ -343,7 +343,7 @@ let commit =
     match hash' with
     | Error _ -> fail "invalid hash"
     | Ok hash -> (
-        let* info = commit_info t hash in
+        let info = commit_info t hash in
         match info with
         | Some info ->
             let body =

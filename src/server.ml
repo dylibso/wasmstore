@@ -154,7 +154,7 @@ let v1 t ~headers ~body ~req = function
       match hash' with
       | Error _ -> fail "invalid hash" `Bad_request
       | Ok hash -> (
-          let* info = commit_info t hash in
+          let info = commit_info t hash in
           match info with
           | Some info ->
               let body = Irmin.Type.to_json_string Commit_info.t info in
