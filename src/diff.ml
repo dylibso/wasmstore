@@ -26,7 +26,7 @@ let make_diff list =
              ( path,
                `Assoc
                  [
-                   ("action", `String "added");
+                   ("action", `String "removed");
                    ( "hash",
                      `String
                        (Irmin.Type.to_string Store.Hash.t
@@ -74,6 +74,10 @@ let string_of_diff t d =
   Yojson.Safe.to_string j
 
 let watch t f =
+  Lwt_eio.run_lwt @@ fun () ->
   Store.watch t.db (fun diff ->
-      let* j = json_of_diff t diff in
+      Lwt_eio.run_eio @@ fun () ->
+      let j = Lwt_eio.run_lwt @@ fun () -> json_of_diff t diff in
       f j)
+
+let unwatch w = Lwt_eio.run_lwt @@ fun () -> Store.unwatch w

@@ -7,6 +7,7 @@ open Cohttp_lwt
 open Cohttp_lwt_unix
 
 let () = Irmin.Backend.Watch.set_listen_dir_hook Irmin_watcher.hook
+let () = Logs_threaded.enable ()
 
 let with_branch' t req =
   let h = Cohttp.Request.headers req in
@@ -18,7 +19,7 @@ let response x =
   `Response x
 
 let list_modules t ~headers path =
-  let* modules = list t path in
+  let modules = list t path in
   let modules =
     List.map
       (fun (k, v) ->
@@ -30,17 +31,17 @@ let list_modules t ~headers path =
   response @@ Server.respond_string ~status:`OK ~headers ~body ()
 
 let list_branches t ~headers =
-  let* branches = Branch.list t in
+  let branches = Branch.list t in
   let body =
     Body.of_string (Irmin.Type.(to_json_string (list string)) branches)
   in
   response @@ Server.respond ~headers ~body ~status:`OK ()
 
 let add_module t ~headers body path =
-  let data = Body.to_stream body in
   Lwt.catch
     (fun () ->
-      let* hash = import t path data in
+      let* data = Body.to_string body in
+      let hash = import t path data in
       let body = Irmin.Type.to_string Store.Hash.t hash in
       response @@ Server.respond_string ~headers ~status:`OK ~body ())
     (function
@@ -55,7 +56,7 @@ let set_hash t ~headers hash path =
   | Ok hash ->
       Lwt.catch
         (fun () ->
-          let* () = set t path hash in
+          let () = set t path hash in
           response @@ Server.respond_string ~headers ~status:`OK ~body:"" ())
         (function
           | Validation_error msg ->
@@ -69,7 +70,7 @@ let set_hash t ~headers hash path =
            ~body:"invalid hash" ()
 
 let find_module t ~headers path =
-  let* filename = get_hash_and_filename t path in
+  let filename = get_hash_and_filename t path in
   match filename with
   | Some (hash, filename) ->
       let headers =
@@ -82,11 +83,11 @@ let find_module t ~headers path =
       response @@ Server.respond_string ~headers ~status:`Not_found ~body:"" ()
 
 let delete_module t ~headers path =
-  let* () = remove t path in
+  let () = remove t path in
   response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
 
 let find_hash t ~headers path =
-  let* hash = hash t path in
+  let hash = hash t path in
   match hash with
   | Some hash ->
       let body = Body.of_string (Irmin.Type.to_string Store.Hash.t hash) in
@@ -145,6 +146,7 @@ let require_auth t ~body ~auth ~headers req ~v1 =
 (** [/api/v1] endpoints *)
 let v1 t ~headers ~body ~req = function
   | `GET, `V1 ("commit" :: [ hash ]) -> (
+      let* () = Body.drain_body body in
       let hash' = Irmin.Type.of_string Hash.t hash in
       let fail body status =
         response @@ Server.respond_string ~headers ~status ~body ()
@@ -152,7 +154,7 @@ let v1 t ~headers ~body ~req = function
       match hash' with
       | Error _ -> fail "invalid hash" `Bad_request
       | Ok hash -> (
-          let* info = commit_info t hash in
+          let info = commit_info t hash in
           match info with
           | Some info ->
               let body = Irmin.Type.to_json_string Commit_info.t info in
@@ -166,7 +168,7 @@ let v1 t ~headers ~body ~req = function
       find_module t ~headers path
   | `HEAD, `V1 ("module" :: path) ->
       let* () = Body.drain_body body in
-      let* exists = contains t path in
+      let exists = contains t path in
       response
       @@ Server.respond_string ~headers
            ~status:(if exists then `OK else `Not_found)
@@ -183,10 +185,11 @@ let v1 t ~headers ~body ~req = function
       delete_module t ~headers path
   | `POST, `V1 [ "gc" ] ->
       let* () = Body.drain_body body in
-      let* _ = gc t in
+      let _ = gc t in
       response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
   | `POST, `V1 [ "merge"; from_branch ] -> (
-      let* res = merge t from_branch in
+      let* () = Body.drain_body body in
+      let res = merge t from_branch in
       match res with
       | Ok _ ->
           response @@ Server.respond_string ~status:`OK ~headers ~body:"" ()
@@ -196,6 +199,7 @@ let v1 t ~headers ~body ~req = function
                ~body:(Irmin.Type.to_string Irmin.Merge.conflict_t r)
                ())
   | `POST, `V1 ("restore" :: hash :: path) -> (
+      let* () = Body.drain_body body in
       let hash = Irmin.Type.of_string Store.Hash.t hash in
       match hash with
       | Error _ ->
@@ -210,20 +214,23 @@ let v1 t ~headers ~body ~req = function
               @@ Server.respond_string ~headers ~status:`Not_found
                    ~body:"commit not found" ()
           | Some commit ->
-              let* () = restore ~path t commit in
+              let* () = Lwt_eio.run_eio @@ fun () -> restore ~path t commit in
               response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
           ))
   | `POST, `V1 ("rollback" :: path) ->
-      let* () = rollback t ~path 1 in
+      let* () = Body.drain_body body in
+      let () = rollback t ~path 1 in
       response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
   | `GET, `V1 [ "snapshot" ] ->
-      let* commit = snapshot t in
+      let* () = Body.drain_body body in
+      let commit = snapshot t in
       response
       @@ Server.respond_string ~headers ~status:`OK
            ~body:(Irmin.Type.to_string Store.Hash.t (Store.Commit.hash commit))
            ()
   | `GET, `V1 ("versions" :: path) ->
-      let* versions = versions t path in
+      let* () = Body.drain_body body in
+      let versions = versions t path in
       let conv = Irmin.Type.to_string Hash.t in
       let versions =
         List.map
@@ -235,7 +242,7 @@ let v1 t ~headers ~body ~req = function
       response @@ Server.respond ~headers ~body ~status:`OK ()
   | `GET, `V1 ("version" :: v :: path) -> (
       let* () = Body.drain_body body in
-      let* version = version t path (int_of_string v) in
+      let version = version t path (int_of_string v) in
       match version with
       | None -> response @@ Server.respond_not_found ()
       | Some (_, `Commit commit) ->
@@ -247,10 +254,10 @@ let v1 t ~headers ~body ~req = function
       let* () = Body.drain_body body in
       list_branches t ~headers
   | `PUT, `V1 [ "branch"; branch ] ->
-      let* () = Branch.switch t branch in
+      let () = Branch.switch t branch in
       response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
   | `POST, `V1 [ "branch"; branch ] -> (
-      let* res = Branch.create t branch in
+      let res = Branch.create t branch in
       match res with
       | Ok _ ->
           response @@ Server.respond_string ~headers ~status:`OK ~body:"" ()
@@ -258,7 +265,7 @@ let v1 t ~headers ~body ~req = function
           response
           @@ Server.respond_string ~headers ~status:`Conflict ~body:s ())
   | `DELETE, `V1 [ "branch"; branch ] ->
-      let* () = Branch.delete t branch in
+      let () = Branch.delete t branch in
       response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
   | `GET, `V1 [ "branch" ] ->
       response @@ Server.respond_string ~headers ~status:`OK ~body:t.branch ()
@@ -267,26 +274,22 @@ let v1 t ~headers ~body ~req = function
       let* a, send =
         Server_websocket.upgrade_connection req (fun msg ->
             if msg.opcode = Websocket.Frame.Opcode.Close then
-              match !w with
-              | Some w -> Lwt.async (fun () -> Store.unwatch w)
-              | None -> ())
+              match !w with Some w -> Diff.unwatch w | None -> ())
       in
-      let+ watch =
+      let watch =
         watch t (fun diff ->
-            Lwt.catch
-              (fun () ->
-                let d = Yojson.Safe.to_string diff in
-                Lwt.wrap (fun () ->
-                    send (Some (Websocket.Frame.create ~content:d ()))))
-              (fun _ ->
-                match !w with
-                | Some w' ->
-                    let+ () = Store.unwatch w' in
-                    w := None
-                | None -> Lwt.return_unit))
+            try
+              let d = Yojson.Safe.to_string diff in
+              send (Some (Websocket.Frame.create ~content:d ()))
+            with _ -> (
+              match !w with
+              | Some w' ->
+                  let () = Diff.unwatch w' in
+                  w := None
+              | None -> ()))
       in
       w := Some watch;
-      a
+      Lwt.return a
   | _, `V1 [ "auth" ] ->
       let* () = Body.drain_body body in
       response @@ Server.respond_string ~headers ~body:"" ~status:`OK ()
@@ -316,6 +319,7 @@ let run ?tls ?(cors = false) ?auth ?(host = "localhost") ?(port = 6384) t =
           Some (`TLS (cert, key, `No_password)) )
     | None -> (`TCP (`Port port), None)
   in
+  Lwt_eio.run_lwt @@ fun () ->
   let* ctx = Conduit_lwt_unix.init ~src:host ?tls_own_key () in
   let ctx = Net.init ~ctx () in
   let callback = callback t ~headers ~auth in
@@ -323,4 +327,7 @@ let run ?tls ?(cors = false) ?auth ?(host = "localhost") ?(port = 6384) t =
   Logs.app (fun l ->
       l "Starting server on %s:%d, cors=%b, tls=%b" host port cors
         (Option.is_some tls));
-  Server.create ~ctx ~on_exn:(fun _ -> ()) ~mode server
+  Server.create ~ctx
+    ~on_exn:(fun exn ->
+      Logs.err (fun l -> l "serve error: %s" (Printexc.to_string exn)))
+    ~mode server

@@ -104,4 +104,6 @@ let gc t =
   in
   Lwt.return !total
 
-let gc t = Error.mk_lwt @@ fun () -> gc t
+let gc t =
+  Lwt_eio.run_lwt @@ fun () ->
+  Error.mk_lwt @@ fun () -> gc t

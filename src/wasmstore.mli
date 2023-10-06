@@ -21,12 +21,10 @@ module Error : sig
 
   val to_string : t -> string
   val unwrap : ('a, t) result -> 'a
-  val unwrap_lwt : ('a, t) result Lwt.t -> 'a Lwt.t
   val wrap : (unit -> 'a) -> ('a, t) result
-  val wrap_lwt : (unit -> 'a Lwt.t) -> ('a, t) result Lwt.t
   val throw : t -> 'a
-  val catch_lwt : (unit -> 'a Lwt.t) -> (t -> 'a Lwt.t) -> 'a Lwt.t
   val catch : (unit -> 'a) -> (t -> 'a) -> 'a
+  val catch_lwt : (unit -> 'a Lwt.t) -> (t -> 'a Lwt.t) -> 'a Lwt.t
 end
 
 type t
@@ -48,55 +46,51 @@ val repo : t -> Store.repo
 (** [repo t] returns the underlying irmin repo *)
 
 val v :
-  ?author:string ->
-  ?branch:string ->
-  string ->
-  env:Eio_unix.Stdenv.base ->
-  t Lwt.t
+  ?author:string -> ?branch:string -> string -> env:Eio_unix.Stdenv.base -> t
 (** [v ~branch root] opens a store open to [branch] on disk at [root] *)
 
-val snapshot : t -> Store.commit Lwt.t
+val snapshot : t -> Store.commit
 (** [snapshot t] gets the current head commit *)
 
-val restore : t -> ?path:string list -> Store.commit -> unit Lwt.t
+val restore : t -> ?path:string list -> Store.commit -> unit
 (** [restore t commit] sets the head commit, if [path] is provided then only the
     specfied path will be reverted *)
 
-val rollback : t -> ?path:string list -> int -> unit Lwt.t
+val rollback : t -> ?path:string list -> int -> unit
 (** [rollback t n] sets the head commit to [n] commits in the past, if [path] is
     provided then only the specfied path will be reverted *)
 
-val find : t -> string list -> string option Lwt.t
+val find : t -> string list -> string option
 (** [find t path] returns the module associated with [path], if path is a
     single-item list containing the string representation of the hash then the
     module will be located using the hash instead. This goes for all functions
     that accept [path] arguments unless otherwise noted. *)
 
-val add : t -> string list -> string -> hash Lwt.t
+val add : t -> string list -> string -> hash
 (** [add t path wasm_module] sets [path] to [wasm_module] after verifying the
     module. If [path] is a hash then it will be converted to "[$HASH].wasm". *)
 
-val set : t -> string list -> hash -> unit Lwt.t
+val set : t -> string list -> hash -> unit
 (** [set t path hash] sets [path] to an existing [hash] *)
 
-val import : t -> string list -> string Lwt_stream.t -> hash Lwt.t
-(** [import t path stream] adds a WebAssembly module from the given stream *)
+val import : t -> string list -> string -> hash
+(** [import t path s] adds a WebAssembly module from the given string *)
 
-val hash : t -> string list -> hash option Lwt.t
+val hash : t -> string list -> hash option
 (** [hash t path] returns the hash associated the the value stored at [path], if
     it exists *)
 
-val remove : t -> string list -> unit Lwt.t
+val remove : t -> string list -> unit
 (** [remove t path] deletes [path] *)
 
-val list : t -> string list -> (string list * hash) list Lwt.t
+val list : t -> string list -> (string list * hash) list
 (** [list t path] returns a list of modules stored under [path]. This function
     does not accept a hash parameter in place of [path] *)
 
-val contains : t -> string list -> bool Lwt.t
+val contains : t -> string list -> bool
 (** [contains t path] returns true if [path] exists *)
 
-val gc : t -> int Lwt.t
+val gc : t -> int
 (** [gc t] runs the GC and returns the number of objects deleted.
 
     When the gc is executed for a branch all prior commits are squashed into one
@@ -105,11 +99,11 @@ val gc : t -> int Lwt.t
     running the garbage collector may purge prior commits, potentially causing
     `restore` to fail. *)
 
-val get_hash_and_filename : t -> string list -> (hash * string) option Lwt.t
+val get_hash_and_filename : t -> string list -> (hash * string) option
 (** [get_hash_and_filename t path] returns a tuple containing the hash and the
     filename of the object disk relative to the root path *)
 
-val merge : t -> string -> (unit, Irmin.Merge.conflict) result Lwt.t
+val merge : t -> string -> (unit, Irmin.Merge.conflict) result
 (** [merge t branch] merges [branch] into [t] *)
 
 val with_branch : t -> string -> t
@@ -118,16 +112,14 @@ val with_branch : t -> string -> t
 val with_author : t -> string -> t
 (** [with_author t name] returns a copy of [t] with [name] as the current author *)
 
-val watch : t -> (Yojson.Safe.t -> unit Lwt.t) -> Store.watch Lwt.t
+val watch : t -> (Yojson.Safe.t -> unit) -> Store.watch
 (** [watch t f] creates a new watch that calls [f] for each new commit *)
 
-val unwatch : Store.watch -> unit Lwt.t
+val unwatch : Store.watch -> unit
 (** [unwatch w] unregisters and disables the watch [w] *)
 
-val versions : t -> string list -> (hash * [ `Commit of hash ]) list Lwt.t
-
-val version :
-  t -> string list -> int -> (hash * [ `Commit of hash ]) option Lwt.t
+val versions : t -> string list -> (hash * [ `Commit of hash ]) list
+val version : t -> string list -> int -> (hash * [ `Commit of hash ]) option
 
 module Commit_info : sig
   type t = {
@@ -140,20 +132,20 @@ module Commit_info : sig
   [@@deriving irmin]
 end
 
-val commit_info : t -> hash -> Commit_info.t option Lwt.t
+val commit_info : t -> hash -> Commit_info.t option
 
 module Branch : sig
-  val switch : t -> string -> unit Lwt.t
+  val switch : t -> string -> unit
   (** [switch t branch] sets [t]'s branch to [branch] *)
 
-  val create : t -> string -> t Error.res Lwt.t
+  val create : t -> string -> t Error.res
   (** [create t branch] creates a new branch, returning an error result if the
       branch already exists *)
 
-  val delete : t -> string -> unit Lwt.t
+  val delete : t -> string -> unit
   (** [delete t branch] destroys [branch] *)
 
-  val list : t -> string list Lwt.t
+  val list : t -> string list
   (** [list t] returns a list of all branches *)
 end
 
@@ -165,7 +157,7 @@ module Server : sig
     ?host:string ->
     ?port:int ->
     t ->
-    unit Lwt.t
+    unit
   (** [run ~cors ~auth ~host ~port t] starts the server on [host:port] If [auth]
       is empty then no authentication is required, otherwise the client should
       provide a key using the [Wasmstore-Auth] header. [auth] is a mapping from

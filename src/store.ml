@@ -34,17 +34,18 @@ let root t =
   let conf = Store.Repo.config (repo t) in
   Irmin.Backend.Conf.get conf Irmin_fs.Conf.Key.root
 
-let try_mkdir ?(mode = 0o755) path =
-  Lwt.catch (fun () -> Lwt_unix.mkdir path mode) (fun _ -> Lwt.return_unit)
+let try_mkdir ?(mode = 0o755) ~env path =
+  let open Eio.Path in
+  try Eio.Path.mkdir ~perm:mode (Eio.Stdenv.fs env / path) with _ -> ()
 
 let v ?(author = "wasmstore") ?(branch = Store.Branch.main) root ~env =
-  let* () = try_mkdir root in
+  let () = try_mkdir root ~env in
   let config = Irmin_fs.config root in
-  let* repo = Store.Repo.v config in
-  let* db = Store.of_branch repo branch in
-  let* () = try_mkdir (root // "tmp") in
-  let* () = try_mkdir (root // "objects") in
-  Lwt.return { db; branch; author; env }
+  let repo = Lwt_eio.run_lwt @@ fun () -> Store.Repo.v config in
+  let db = Lwt_eio.run_lwt @@ fun () -> Store.of_branch repo branch in
+  let () = try_mkdir ~env (root // "tmp") in
+  let () = try_mkdir ~env (root // "objects") in
+  { db; branch; author; env }
 
 let verify_string wasm =
   match Rust.verify_string wasm with
@@ -56,12 +57,15 @@ let verify_file filename =
   | Ok () -> ()
   | Error (`Msg e) -> raise (Validation_error e)
 
-let snapshot { db; _ } = Store.Head.get db
+let snapshot { db; _ } = Lwt_eio.run_lwt @@ fun () -> Store.Head.get db
 
 let restore t ?path commit =
   match path with
-  | None | Some [] -> Error.mk_lwt @@ fun () -> Store.Head.set t.db commit
+  | None | Some [] ->
+      Error.mk @@ fun () ->
+      Lwt_eio.run_lwt @@ fun () -> Store.Head.set t.db commit
   | Some path ->
+      Lwt_eio.run_lwt @@ fun () ->
       let info = info t "Restore %a" (Irmin.Type.pp Store.Path.t) path in
       let parents = Store.Commit.parents commit in
       let* parents =
@@ -74,11 +78,14 @@ let restore t ?path commit =
 
 let tree_opt_equal = Irmin.Type.(unstage (equal (option Store.Tree.t)))
 
-let rollback t ?(path = []) n : unit Lwt.t =
-  let* lm = Store.last_modified ~n:(n + 1) t.db path in
+let rollback t ?(path = []) n : unit =
+  let lm =
+    Lwt_eio.run_lwt @@ fun () -> Store.last_modified ~n:(n + 1) t.db path
+  in
   match List.rev lm with
   | commit :: _ :: _ -> restore t ~path commit
   | [ _ ] | [] ->
+      Lwt_eio.run_lwt @@ fun () ->
       let info = info t "Rollback %a" Irmin.Type.(pp Store.Path.t) path in
       Error.mk_lwt @@ fun () ->
       Store.with_tree_exn ~info t.db path (fun _ -> Lwt.return_none)
@@ -105,6 +112,7 @@ let contains_hash t hash =
   aux tree
 
 let get_hash_and_filename t path =
+  Lwt_eio.run_lwt @@ fun () ->
   let* hash = hash_or_path ~hash:Lwt.return_some ~path:(Store.hash t.db) path in
   match hash with
   | None -> Lwt.return_none
@@ -116,6 +124,7 @@ let get_hash_and_filename t path =
       else None
 
 let set_path t path hash =
+  Lwt_eio.run_lwt @@ fun () ->
   let* tree = Store.Tree.of_hash (repo t) (`Contents (hash, ())) in
   match tree with
   | None -> Error.throw (`Msg "hash mismatch")
@@ -123,44 +132,37 @@ let set_path t path hash =
       let info = info t "Import %a" (Irmin.Type.pp Store.Path.t) path in
       Store.set_tree_exn t.db path tree ~info
 
-let import t path stream =
-  let hash = ref (Digestif.SHA256.init ()) in
+let import t path data =
   let tmp =
     Filename.temp_file ~temp_dir:(root t // "tmp") "wasmstore" "import"
   in
-  let* () =
-    Lwt_io.with_file
-      ~flags:Unix.[ O_CREAT; O_WRONLY ]
-      ~mode:Output tmp
-      (fun oc ->
-        Lwt_stream.iter_s
-          (fun s ->
-            hash := Digestif.SHA256.feed_string !hash s;
-            Lwt_io.write oc s)
-          stream)
-  in
-  let hash = Digestif.SHA256.get !hash in
+  let tmp' = Eio.Path.(Eio.Stdenv.fs t.env / tmp) in
+  let hash = Digestif.SHA256.digest_string data in
   let hash =
     Irmin.Hash.SHA256.unsafe_of_raw_string (Digestif.SHA256.to_raw_string hash)
   in
   let dest = root t // path_of_hash hash in
-  let* exists = Lwt_unix.file_exists dest in
-  let* () =
-    if not exists then
-      let () =
-        try verify_file tmp
-        with e ->
-          Unix.unlink tmp;
-          raise e
-      in
-      let* () = try_mkdir (Filename.dirname dest) in
-      Lwt_unix.rename tmp dest
-    else Lwt.return_unit
-  in
-  let* () = set_path t path hash in
-  Lwt.return hash
+  let dest' = Eio.Path.(Eio.Stdenv.fs t.env / dest) in
+  let exists = Sys.file_exists dest in
+  if exists then
+    let () = set_path t path hash in
+    hash
+  else
+    let () = Eio.Path.save tmp' data ~create:(`Or_truncate 0o655) in
+    let () =
+      try
+        let () = verify_file tmp in
+        let () = try_mkdir ~env:t.env (Filename.dirname dest) in
+        let () = Eio.Path.rename tmp' dest' in
+        set_path t path hash
+      with e ->
+        Eio.Path.(unlink tmp');
+        raise e
+    in
+    hash
 
 let add t path wasm =
+  Lwt_eio.run_lwt @@ fun () ->
   let () = verify_string wasm in
   let info = info t "Add %a" (Irmin.Type.pp Store.Path.t) path in
   let f hash =
@@ -183,6 +185,7 @@ let add t path wasm =
   Store.Contents.hash wasm
 
 let set t path hash =
+  Lwt_eio.run_lwt @@ fun () ->
   let* tree = Store.Tree.of_hash (repo t) (`Contents (hash, ())) in
   let f path =
     match tree with
@@ -207,9 +210,12 @@ let find_hash t hash =
   if contains then Store.Contents.of_hash (Store.repo t.db) hash
   else Lwt.return_none
 
-let find t path = hash_or_path ~hash:(find_hash t) ~path:(Store.find t.db) path
+let find t path =
+  Lwt_eio.run_lwt @@ fun () ->
+  hash_or_path ~hash:(find_hash t) ~path:(Store.find t.db) path
 
 let hash t path =
+  Lwt_eio.run_lwt @@ fun () ->
   hash_or_path ~hash:(fun x -> Lwt.return_some x) ~path:(Store.hash t.db) path
 
 let remove t path =
@@ -238,6 +244,7 @@ let remove t path =
       ~test:(if is_empty then None else Some tree)
       ~set:(Some tree') ~info
   in
+  Lwt_eio.run_lwt @@ fun () ->
   hash_or_path ~path:(Store.remove_exn t.db ~info) ~hash path
 
 let list { db; _ } path =
@@ -256,15 +263,17 @@ let list { db; _ } path =
     in
     List.flatten items
   in
-  aux path
+  Lwt_eio.run_lwt @@ fun () -> aux path
 
 let contains t path =
+  Lwt_eio.run_lwt @@ fun () ->
   hash_or_path
     ~hash:(fun h -> contains_hash t h)
     ~path:(fun path -> Store.mem t.db path)
     path
 
 let merge t branch =
+  Lwt_eio.run_lwt @@ fun () ->
   let info = info t "Merge %s" branch in
   Store.merge_with_branch t.db ~info branch
 
@@ -278,6 +287,7 @@ module Hash_set = Set.Make (struct
 end)
 
 let versions t path =
+  Lwt_eio.run_lwt @@ fun () ->
   let* lm = Store.last_modified t.db ~n:max_int path in
   let hashes = ref Hash_set.empty in
   Lwt_list.filter_map_s
@@ -294,7 +304,7 @@ let versions t path =
     lm
 
 let version t path index =
-  let+ versions = versions t path in
+  let versions = versions t path in
   List.nth_opt versions index
 
 module Commit_info = struct
@@ -309,7 +319,8 @@ module Commit_info = struct
 end
 
 let commit_info t hash =
-  let* commit =
+  let commit =
+    Lwt_eio.run_lwt @@ fun () ->
     Lwt.catch
       (fun () -> Store.Commit.of_hash (repo t) hash)
       (function Assert_failure _ -> Lwt.return_none | exn -> raise exn)
@@ -318,7 +329,7 @@ let commit_info t hash =
   | Some commit ->
       let parents = Store.Commit.parents commit in
       let info = Store.Commit.info commit in
-      Lwt.return_some
+      Some
         Commit_info.
           {
             hash;
@@ -327,4 +338,4 @@ let commit_info t hash =
             date = Store.Info.date info;
             message = Store.Info.message info;
           }
-  | None -> Lwt.return_none
+  | None -> None

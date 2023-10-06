@@ -339,11 +339,18 @@ mod tests {
         let data1 = client.find("test.wasm").await.unwrap();
 
         let hash = client.snapshot().await.unwrap();
-        client.commit_info(&hash).await.unwrap();
+        assert_eq!(client.commit_info(&hash).await.unwrap().hash, hash);
 
+        assert!(client.contains("test.wasm").await.unwrap());
         client.remove("test.wasm").await.unwrap();
+        assert!(!client.contains("test.wasm").await.unwrap());
 
+        println!("Restore {:?}", hash);
         client.restore(&hash).await.unwrap();
+        let _ = client.delete_branch("testing").await;
+        assert!(client.create_branch("testing").await.is_ok());
+        let branches = client.branches().await.unwrap();
+        assert!(branches.len() >= 2);
 
         assert!(data.is_some());
         assert!(data1.is_some());
