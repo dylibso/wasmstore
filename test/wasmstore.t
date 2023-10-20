@@ -2,7 +2,7 @@
 
 Parsing fail
   $ head -c 12 a.wasm | wasmstore add - a.wasm 
-  ERROR invalid module: unexpected end-of-file (at offset 0xb)
+  ERROR invalid module: unexpected end-of-file
 
 Add wasm module `a`
   $ cat a.wasm | wasmstore add - a.wasm 
@@ -82,7 +82,7 @@ Run garbage collector
 
 Invalid WASM module
   $ head -c 5 a.wasm | wasmstore add - invalid.wasm
-  ERROR invalid module: unexpected end-of-file (at offset 0x4)
+  ERROR invalid module: unexpected end-of-file
 
 Versions
   $ wasmstore add a.wasm b.wasm

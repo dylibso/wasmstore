@@ -1,5 +1,5 @@
 use std::io::Read;
-use wasmparser::{Chunk, Parser, Validator};
+use wasmparser::{Chunk, Parser, Payload::*, Validator};
 
 fn err<T: ToString>(x: T) -> String {
     x.to_string()
@@ -10,12 +10,20 @@ fn validate(mut reader: impl Read) -> Result<(), String> {
     let mut parser = Parser::new(0);
     let mut eof = false;
     let mut stack = Vec::new();
-    let mut validator = Validator::new();
+    let mut validator = Validator::new_with_features(wasmparser::WasmFeatures {
+        component_model: true,
+        ..Default::default()
+    });
 
     loop {
-        let (payload, consumed) = match parser.parse(&buf, eof).map_err(err)? {
+        let (payload, consumed) = match parser
+            .parse(&buf, eof)
+            .map_err(|x| x.message().to_string())?
+        {
             Chunk::NeedMoreData(hint) => {
-                assert!(!eof); // otherwise an error would be returned
+                if eof {
+                    return Err("unexpected end-of-file".to_string());
+                }
 
                 // Use the hint to preallocate more space, then read
                 // some more data into our buffer.
@@ -32,6 +40,14 @@ fn validate(mut reader: impl Read) -> Result<(), String> {
 
             Chunk::Parsed { consumed, payload } => (payload, consumed),
         };
+
+        match &payload {
+            ModuleSection { parser: p, .. } | ComponentSection { parser: p, .. } => {
+                stack.push(parser.clone());
+                parser = p.clone();
+            }
+            _ => (),
+        }
 
         match validator.payload(&payload).map_err(err)? {
             wasmparser::ValidPayload::End(_) => {
@@ -78,7 +94,7 @@ pub unsafe fn wasm_verify_file(filename: *const u8, len: usize) -> *mut u8 {
 
         match validate(file) {
             Ok(()) => std::ptr::null_mut(),
-            Err(e) => return_string(format!("{}", e)),
+            Err(e) => return_string(e),
         }
     } else {
         std::ptr::null_mut()
