@@ -10,7 +10,10 @@ fn validate(mut reader: impl Read) -> Result<(), String> {
     let mut parser = Parser::new(0);
     let mut eof = false;
     let mut stack = Vec::new();
-    let mut validator = Validator::new();
+    let mut validator = Validator::new_with_features(wasmparser::WasmFeatures {
+        component_model: true,
+        ..Default::default()
+    });
 
     loop {
         let (payload, consumed) = match parser.parse(&buf, eof).map_err(err)? {
