@@ -16,11 +16,9 @@ def normalize_path(path):
 
 class Client:
 
-    def __init__(self,
-                 url="http://127.0.0.1:6384",
-                 version="v1",
-                 auth=None,
-                 branch=None):
+    def __init__(
+        self, url="http://127.0.0.1:6384", version="v1", auth=None, branch=None
+    ):
         self.url = url + "/api/" + version
         self.auth = auth
         self.branch = branch
@@ -40,14 +38,11 @@ class Client:
         return res.content
 
     def add(self, path, data):
-        res = self.request("POST",
-                           "/module/" + normalize_path(path),
-                           body=data)
+        res = self.request("POST", "/module/" + normalize_path(path), body=data)
         return res.text
 
     def set(self, path, hash):
-        res = self.request("POST",
-                           "/hash/" + hash + "/" + normalize_pathr(path))
+        res = self.request("POST", "/hash/" + hash + "/" + normalize_pathr(path))
         return res.text
 
     def hash(self, path):
