@@ -2,7 +2,7 @@ opam-version: "2.0"
 synopsis: "opam-monorepo generated lockfile"
 maintainer: "opam-monorepo"
 depends: [
-  "angstrom" {= "0.15.0" & ?vendor}
+  "angstrom" {= "0.16.0" & ?vendor}
   "asn1-combinators" {= "0.2.6" & ?vendor}
   "astring" {= "0.8.5+dune" & ?vendor}
   "base" {= "v0.16.3" & ?vendor}
@@ -20,13 +20,14 @@ depends: [
   "ca-certs" {= "0.2.3" & ?vendor}
   "cf" {= "0.5.0" & ?vendor}
   "cf-lwt" {= "0.5.0" & ?vendor}
-  "cmdliner" {= "1.1.1+dune" & ?vendor}
+  "cmdliner" {= "1.2.0+dune" & ?vendor}
   "cohttp" {= "6.0.0~alpha2" & ?vendor}
   "cohttp-lwt" {= "6.0.0~alpha2" & ?vendor}
   "cohttp-lwt-unix" {= "6.0.0~alpha2" & ?vendor}
-  "conduit" {= "6.2.0" & ?vendor}
-  "conduit-lwt" {= "6.2.0" & ?vendor}
-  "conduit-lwt-unix" {= "6.2.0" & ?vendor}
+  "conduit" {= "6.2.1" & ?vendor}
+  "conduit-lwt" {= "6.2.1" & ?vendor}
+  "conduit-lwt-unix" {= "6.2.1" & ?vendor}
+  "conf-bash" {= "1"}
   "conf-gmp" {= "4"}
   "conf-gmp-powm-sec" {= "3"}
   "conf-libffi" {= "2.0.0"}
@@ -35,18 +36,18 @@ depends: [
   "cppo" {= "1.6.9" & ?vendor}
   "csexp" {= "1.5.2" & ?vendor}
   "cstruct" {= "6.2.0" & ?vendor}
-  "ctypes" {= "0.21.1" & ?vendor}
-  "ctypes-foreign" {= "0.21.1" & ?vendor}
-  "digestif" {= "1.1.4" & ?vendor}
-  "domain-local-await" {= "1.0.0" & ?vendor}
+  "ctypes" {= "0.22.0" & ?vendor}
+  "ctypes-foreign" {= "0.22.0" & ?vendor}
+  "digestif" {= "1.2.0" & ?vendor}
+  "domain-local-await" {= "1.0.1" & ?vendor}
   "domain-name" {= "0.4.0" & ?vendor}
-  "dune" {= "3.10.0"}
-  "dune-configurator" {= "3.10.0" & ?vendor}
+  "dune" {= "3.15.0"}
+  "dune-configurator" {= "3.15.0" & ?vendor}
   "duration" {= "0.2.1" & ?vendor}
-  "eio" {= "0.12" & ?vendor}
-  "eio_linux" {= "0.12" & ?vendor}
-  "eio_main" {= "0.12" & ?vendor}
-  "eio_posix" {= "0.12" & ?vendor}
+  "eio" {= "1.0" & ?vendor}
+  "eio_linux" {= "1.0" & ?vendor}
+  "eio_main" {= "1.0" & ?vendor}
+  "eio_posix" {= "1.0" & ?vendor}
   "either" {= "1.0.0" & ?vendor}
   "eqaf" {= "0.9" & ?vendor}
   "findlib" {= "1.9.5+dune" & ?vendor}
@@ -57,29 +58,29 @@ depends: [
   "gmap" {= "0.3.0" & ?vendor}
   "hmap" {= "0.8.1+dune" & ?vendor}
   "http" {= "6.0.0~alpha2" & ?vendor}
-  "inotify" {= "2.4.1" & ?vendor}
+  "inotify" {= "2.5" & ?vendor}
   "integers" {= "0.7.0" & ?vendor}
   "iomux" {= "0.3" & ?vendor}
   "ipaddr" {= "5.5.0" & ?vendor}
   "ipaddr-sexp" {= "5.5.0" & ?vendor}
-  "irmin" {= "3.8.0" & ?vendor}
-  "irmin-fs" {= "3.8.0" & ?vendor}
+  "irmin" {= "3.9.0" & ?vendor}
+  "irmin-fs" {= "3.9.0" & ?vendor}
   "irmin-watcher" {= "0.5.0" & ?vendor}
   "jsonm" {= "1.0.1+dune" & ?vendor}
   "logs" {= "0.7.0+dune2" & ?vendor}
   "lwt" {= "5.7.0" & ?vendor}
   "lwt-dllist" {= "1.0.1" & ?vendor}
-  "lwt_eio" {= "0.5" & ?vendor}
+  "lwt_eio" {= "0.5.1" & ?vendor}
   "macaddr" {= "5.5.0" & ?vendor}
-  "magic-mime" {= "1.3.0" & ?vendor}
-  "mirage-crypto" {= "0.11.2" & ?vendor}
-  "mirage-crypto-ec" {= "0.11.2" & ?vendor}
-  "mirage-crypto-pk" {= "0.11.2" & ?vendor}
-  "mirage-crypto-rng" {= "0.11.2" & ?vendor}
+  "magic-mime" {= "1.3.1" & ?vendor}
+  "mirage-crypto" {= "0.11.3" & ?vendor}
+  "mirage-crypto-ec" {= "0.11.3" & ?vendor}
+  "mirage-crypto-pk" {= "0.11.3" & ?vendor}
+  "mirage-crypto-rng" {= "0.11.3" & ?vendor}
   "mtime" {= "2.0.0+dune" & ?vendor}
   "num" {= "1.4+dune2" & ?vendor}
-  "ocaml" {= "5.1.0"}
-  "ocaml-base-compiler" {= "5.1.0"}
+  "ocaml" {= "5.1.1"}
+  "ocaml-base-compiler" {= "5.1.1"}
   "ocaml-compiler-libs" {= "v0.12.4" & ?vendor}
   "ocaml-config" {= "3"}
   "ocaml-options-vanilla" {= "1"}
@@ -92,10 +93,10 @@ depends: [
   "pbkdf" {= "1.2.0" & ?vendor}
   "ppx_derivers" {= "1.2.1" & ?vendor}
   "ppx_deriving" {= "5.2.1" & ?vendor}
-  "ppx_irmin" {= "3.8.0" & ?vendor}
+  "ppx_irmin" {= "3.9.0" & ?vendor}
   "ppx_repr" {= "0.7.0" & ?vendor}
   "ppx_sexp_conv" {= "v0.16.0" & ?vendor}
-  "ppxlib" {= "0.30.0" & ?vendor}
+  "ppxlib" {= "0.32.0" & ?vendor}
   "psq" {= "0.2.1" & ?vendor}
   "ptime" {= "1.1.0+dune" & ?vendor}
   "re" {= "1.11.0" & ?vendor}
@@ -108,16 +109,18 @@ depends: [
   "stdlib-shims" {= "0.3.0" & ?vendor}
   "stringext" {= "1.6.0" & ?vendor}
   "thread-table" {= "1.0.0" & ?vendor}
-  "uri" {= "4.2.0" & ?vendor}
-  "uri-sexp" {= "4.2.0" & ?vendor}
-  "uring" {= "0.7" & ?vendor}
+  "uri" {= "4.4.0" & ?vendor}
+  "uri-sexp" {= "4.4.0" & ?vendor}
+  "uring" {= "0.8" & ?vendor}
   "uutf" {= "1.0.3+dune" & ?vendor}
   "websocket" {= "2.16" & ?vendor}
   "x509" {= "0.16.5" & ?vendor}
-  "yojson" {= "2.1.0" & ?vendor}
+  "yojson" {= "2.1.2" & ?vendor}
   "zarith" {= "1.12+dune" & ?vendor}
 ]
 depexts: [
+  ["bash"] {os-distribution = "alpine"}
+  ["bash"] {os-family = "bsd"}
   ["ca_root_nss"] {os = "freebsd"}
   ["cargo"] {os-distribution = "fedora"}
   ["cargo"] {os-family = "alpine"}
@@ -134,8 +137,8 @@ depexts: [
   ["gmp"] {os = "win32" & os-distribution = "cygwinports"}
   ["gmp"] {os-distribution = "macports" & os = "macos"}
   ["gmp" "gmp-devel"] {os-distribution = "centos"}
-  ["gmp" "gmp-devel"] {os-distribution = "fedora"}
   ["gmp" "gmp-devel"] {os-distribution = "ol"}
+  ["gmp" "gmp-devel"] {os-distribution = "fedora" | os-family = "fedora"}
   ["gmp-dev"] {os-distribution = "alpine"}
   ["gmp-devel"] {os-family = "suse" | os-family = "opensuse"}
   ["libffi"] {os = "freebsd"}
@@ -145,6 +148,7 @@ depexts: [
   ["libffi"] {os = "win32" & os-distribution = "cygwinports"}
   ["libffi-dev"] {os-distribution = "alpine"}
   ["libffi-dev"] {os-family = "debian"}
+  ["libffi-dev"] {os-family = "ubuntu"}
   ["libffi-devel"] {os-distribution = "centos"}
   ["libffi-devel"] {os-distribution = "fedora"}
   ["libffi-devel"] {os-distribution = "mageia"}
@@ -153,29 +157,31 @@ depexts: [
   ["libgmp-dev"] {os-family = "debian"}
   ["libgmp-dev"] {os-family = "ubuntu"}
   ["linux-headers"] {os-distribution = "alpine"}
-  ["pkg-config"] {os-family = "debian"}
+  ["pkg-config"] {os-distribution = "nixos"}
   ["pkg-config"] {os = "macos" & os-distribution = "homebrew"}
+  ["pkg-config"] {os-family = "debian" | os-family = "ubuntu"}
   ["pkgconf"] {os = "freebsd"}
   ["pkgconf"] {os-distribution = "alpine"}
   ["pkgconf"] {os-distribution = "arch"}
+  ["pkgconf"] {os = "win32" & os-distribution = "cygwin"}
   ["pkgconf-pkg-config"] {os-distribution = "fedora"}
   ["pkgconf-pkg-config"] {os-distribution = "mageia"}
   ["pkgconf-pkg-config"] {os-distribution = "centos" & os-version >= "8"}
   ["pkgconf-pkg-config"] {os-distribution = "ol" & os-version >= "8"}
   ["pkgconf-pkg-config"] {os-distribution = "rhel" & os-version >= "8"}
-  ["pkgconfig"] {os-distribution = "nixos"}
   ["pkgconfig"] {os = "macos" & os-distribution = "macports"}
   ["pkgconfig"] {os-distribution = "centos" & os-version <= "7"}
   ["pkgconfig"] {os-distribution = "ol" & os-version <= "7"}
   ["pkgconfig"] {os-distribution = "rhel" & os-version <= "7"}
+  ["rust"] {os = "freebsd"}
   ["rust"] {os-family = "arch"}
   ["rust"] {os = "macos" & os-distribution = "homebrew"}
   ["system:pkgconf"] {os = "win32" & os-distribution = "cygwinports"}
 ]
 pin-depends: [
   [
-    "angstrom.0.15.0"
-    "https://github.com/inhabitedtype/angstrom/archive/0.15.0.tar.gz"
+    "angstrom.0.16.0"
+    "https://github.com/inhabitedtype/angstrom/archive/0.16.0.tar.gz"
   ]
   [
     "asn1-combinators.0.2.6"
@@ -226,8 +232,8 @@ pin-depends: [
     "https://github.com/mirage/ocaml-cf/releases/download/0.5.0/cf-lwt-0.5.0.tbz"
   ]
   [
-    "cmdliner.1.1.1+dune"
-    "https://erratique.ch/software/cmdliner/releases/cmdliner-1.1.1.tbz"
+    "cmdliner.1.2.0+dune"
+    "https://github.com/dune-universe/cmdliner/releases/download/v1.2.0%2Bdune/cmdliner-1.2.0.dune.tbz"
   ]
   [
     "cohttp.6.0.0~alpha2"
@@ -242,16 +248,16 @@ pin-depends: [
     "https://github.com/mirage/ocaml-cohttp/releases/download/v6.0.0_alpha2/cohttp-6.0.0.alpha2.tbz"
   ]
   [
-    "conduit.6.2.0"
-    "https://github.com/mirage/ocaml-conduit/releases/download/v6.2.0/conduit-6.2.0.tbz"
+    "conduit.6.2.1"
+    "https://github.com/mirage/ocaml-conduit/releases/download/v6.2.1/conduit-6.2.1.tbz"
   ]
   [
-    "conduit-lwt.6.2.0"
-    "https://github.com/mirage/ocaml-conduit/releases/download/v6.2.0/conduit-6.2.0.tbz"
+    "conduit-lwt.6.2.1"
+    "https://github.com/mirage/ocaml-conduit/releases/download/v6.2.1/conduit-6.2.1.tbz"
   ]
   [
-    "conduit-lwt-unix.6.2.0"
-    "https://github.com/mirage/ocaml-conduit/releases/download/v6.2.0/conduit-6.2.0.tbz"
+    "conduit-lwt-unix.6.2.1"
+    "https://github.com/mirage/ocaml-conduit/releases/download/v6.2.1/conduit-6.2.1.tbz"
   ]
   [
     "cppo.1.6.9"
@@ -266,48 +272,48 @@ pin-depends: [
     "https://github.com/mirage/ocaml-cstruct/releases/download/v6.2.0/cstruct-6.2.0.tbz"
   ]
   [
-    "ctypes.0.21.1"
-    "https://github.com/yallop/ocaml-ctypes/archive/refs/tags/0.21.1.tar.gz"
+    "ctypes.0.22.0"
+    "https://github.com/yallop/ocaml-ctypes/archive/refs/tags/0.22.0.tar.gz"
   ]
   [
-    "ctypes-foreign.0.21.1"
-    "https://github.com/yallop/ocaml-ctypes/archive/refs/tags/0.21.1.tar.gz"
+    "ctypes-foreign.0.22.0"
+    "https://github.com/yallop/ocaml-ctypes/archive/refs/tags/0.22.0.tar.gz"
   ]
   [
-    "digestif.1.1.4"
-    "https://github.com/mirage/digestif/releases/download/v1.1.4/digestif-1.1.4.tbz"
+    "digestif.1.2.0"
+    "https://github.com/mirage/digestif/releases/download/v1.2.0/digestif-1.2.0.tbz"
   ]
   [
-    "domain-local-await.1.0.0"
-    "https://github.com/ocaml-multicore/domain-local-await/releases/download/1.0.0/domain-local-await-1.0.0.tbz"
+    "domain-local-await.1.0.1"
+    "https://github.com/ocaml-multicore/domain-local-await/releases/download/1.0.1/domain-local-await-1.0.1.tbz"
   ]
   [
     "domain-name.0.4.0"
     "https://github.com/hannesm/domain-name/releases/download/v0.4.0/domain-name-0.4.0.tbz"
   ]
   [
-    "dune-configurator.3.10.0"
-    "https://github.com/ocaml/dune/releases/download/3.10.0/dune-3.10.0.tbz"
+    "dune-configurator.3.15.0"
+    "https://github.com/ocaml/dune/releases/download/3.15.0/dune-3.15.0.tbz"
   ]
   [
     "duration.0.2.1"
     "https://github.com/hannesm/duration/releases/download/v0.2.1/duration-0.2.1.tbz"
   ]
   [
-    "eio.0.12"
-    "https://github.com/ocaml-multicore/eio/releases/download/v0.12/eio-0.12.tbz"
+    "eio.1.0"
+    "https://github.com/ocaml-multicore/eio/releases/download/v1.0/eio-1.0.tbz"
   ]
   [
-    "eio_linux.0.12"
-    "https://github.com/ocaml-multicore/eio/releases/download/v0.12/eio-0.12.tbz"
+    "eio_linux.1.0"
+    "https://github.com/ocaml-multicore/eio/releases/download/v1.0/eio-1.0.tbz"
   ]
   [
-    "eio_main.0.12"
-    "https://github.com/ocaml-multicore/eio/releases/download/v0.12/eio-0.12.tbz"
+    "eio_main.1.0"
+    "https://github.com/ocaml-multicore/eio/releases/download/v1.0/eio-1.0.tbz"
   ]
   [
-    "eio_posix.0.12"
-    "https://github.com/ocaml-multicore/eio/releases/download/v0.12/eio-0.12.tbz"
+    "eio_posix.1.0"
+    "https://github.com/ocaml-multicore/eio/releases/download/v1.0/eio-1.0.tbz"
   ]
   [
     "either.1.0.0"
@@ -350,8 +356,8 @@ pin-depends: [
     "https://github.com/mirage/ocaml-cohttp/releases/download/v6.0.0_alpha2/cohttp-6.0.0.alpha2.tbz"
   ]
   [
-    "inotify.2.4.1"
-    "https://github.com/whitequark/ocaml-inotify/archive/v2.4.1.tar.gz"
+    "inotify.2.5"
+    "https://github.com/whitequark/ocaml-inotify/releases/download/v2.5/inotify-2.5.tbz"
   ]
   [
     "integers.0.7.0"
@@ -370,12 +376,12 @@ pin-depends: [
     "https://github.com/mirage/ocaml-ipaddr/releases/download/v5.5.0/ipaddr-5.5.0.tbz"
   ]
   [
-    "irmin.3.8.0"
-    "https://github.com/mirage/irmin/releases/download/3.8.0/irmin-3.8.0.tbz"
+    "irmin.3.9.0"
+    "https://github.com/mirage/irmin/releases/download/3.9.0/irmin-3.9.0.tbz"
   ]
   [
-    "irmin-fs.3.8.0"
-    "https://github.com/mirage/irmin/releases/download/3.8.0/irmin-3.8.0.tbz"
+    "irmin-fs.3.9.0"
+    "https://github.com/mirage/irmin/releases/download/3.9.0/irmin-3.9.0.tbz"
   ]
   [
     "irmin-watcher.0.5.0"
@@ -398,32 +404,32 @@ pin-depends: [
     "https://github.com/mirage/lwt-dllist/releases/download/v1.0.1/lwt-dllist-v1.0.1.tbz"
   ]
   [
-    "lwt_eio.0.5"
-    "https://github.com/ocaml-multicore/lwt_eio/releases/download/v0.5/lwt_eio-0.5.tbz"
+    "lwt_eio.0.5.1"
+    "https://github.com/ocaml-multicore/lwt_eio/releases/download/v0.5.1/lwt_eio-0.5.1.tbz"
   ]
   [
     "macaddr.5.5.0"
     "https://github.com/mirage/ocaml-ipaddr/releases/download/v5.5.0/ipaddr-5.5.0.tbz"
   ]
   [
-    "magic-mime.1.3.0"
-    "https://github.com/mirage/ocaml-magic-mime/releases/download/v1.3.0/magic-mime-1.3.0.tbz"
+    "magic-mime.1.3.1"
+    "https://github.com/mirage/ocaml-magic-mime/releases/download/v1.3.1/magic-mime-1.3.1.tbz"
   ]
   [
-    "mirage-crypto.0.11.2"
-    "https://github.com/mirage/mirage-crypto/releases/download/v0.11.2/mirage-crypto-0.11.2.tbz"
+    "mirage-crypto.0.11.3"
+    "https://github.com/mirage/mirage-crypto/releases/download/v0.11.3/mirage-crypto-0.11.3.tbz"
   ]
   [
-    "mirage-crypto-ec.0.11.2"
-    "https://github.com/mirage/mirage-crypto/releases/download/v0.11.2/mirage-crypto-0.11.2.tbz"
+    "mirage-crypto-ec.0.11.3"
+    "https://github.com/mirage/mirage-crypto/releases/download/v0.11.3/mirage-crypto-0.11.3.tbz"
   ]
   [
-    "mirage-crypto-pk.0.11.2"
-    "https://github.com/mirage/mirage-crypto/releases/download/v0.11.2/mirage-crypto-0.11.2.tbz"
+    "mirage-crypto-pk.0.11.3"
+    "https://github.com/mirage/mirage-crypto/releases/download/v0.11.3/mirage-crypto-0.11.3.tbz"
   ]
   [
-    "mirage-crypto-rng.0.11.2"
-    "https://github.com/mirage/mirage-crypto/releases/download/v0.11.2/mirage-crypto-0.11.2.tbz"
+    "mirage-crypto-rng.0.11.3"
+    "https://github.com/mirage/mirage-crypto/releases/download/v0.11.3/mirage-crypto-0.11.3.tbz"
   ]
   [
     "mtime.2.0.0+dune"
@@ -474,8 +480,8 @@ pin-depends: [
     "https://github.com/ocaml-ppx/ppx_deriving/releases/download/v5.2.1/ppx_deriving-v5.2.1.tbz"
   ]
   [
-    "ppx_irmin.3.8.0"
-    "https://github.com/mirage/irmin/releases/download/3.8.0/irmin-3.8.0.tbz"
+    "ppx_irmin.3.9.0"
+    "https://github.com/mirage/irmin/releases/download/3.9.0/irmin-3.9.0.tbz"
   ]
   [
     "ppx_repr.0.7.0"
@@ -486,8 +492,8 @@ pin-depends: [
     "https://ocaml.janestreet.com/ocaml-core/v0.16/files/ppx_sexp_conv-v0.16.0.tar.gz"
   ]
   [
-    "ppxlib.0.30.0"
-    "https://github.com/ocaml-ppx/ppxlib/releases/download/0.30.0/ppxlib-0.30.0.tbz"
+    "ppxlib.0.32.0"
+    "https://github.com/ocaml-ppx/ppxlib/releases/download/0.32.0/ppxlib-0.32.0.tbz"
   ]
   [
     "psq.0.2.1"
@@ -535,16 +541,16 @@ pin-depends: [
     "https://github.com/ocaml-multicore/thread-table/releases/download/1.0.0/thread-table-1.0.0.tbz"
   ]
   [
-    "uri.4.2.0"
-    "https://github.com/mirage/ocaml-uri/releases/download/v4.2.0/uri-v4.2.0.tbz"
+    "uri.4.4.0"
+    "https://github.com/mirage/ocaml-uri/releases/download/v4.4.0/uri-4.4.0.tbz"
   ]
   [
-    "uri-sexp.4.2.0"
-    "https://github.com/mirage/ocaml-uri/releases/download/v4.2.0/uri-v4.2.0.tbz"
+    "uri-sexp.4.4.0"
+    "https://github.com/mirage/ocaml-uri/releases/download/v4.4.0/uri-4.4.0.tbz"
   ]
   [
-    "uring.0.7"
-    "https://github.com/ocaml-multicore/ocaml-uring/releases/download/v0.7/uring-0.7.tbz"
+    "uring.0.8"
+    "https://github.com/ocaml-multicore/ocaml-uring/releases/download/v0.8/uring-0.8.tbz"
   ]
   [
     "uutf.1.0.3+dune"
@@ -559,8 +565,8 @@ pin-depends: [
     "https://github.com/mirleft/ocaml-x509/releases/download/v0.16.5/x509-0.16.5.tbz"
   ]
   [
-    "yojson.2.1.0"
-    "https://github.com/ocaml-community/yojson/releases/download/2.1.0/yojson-2.1.0.tbz"
+    "yojson.2.1.2"
+    "https://github.com/ocaml-community/yojson/releases/download/2.1.2/yojson-2.1.2.tbz"
   ]
   [
     "zarith.1.12+dune"
@@ -568,13 +574,6 @@ pin-depends: [
   ]
 ]
 x-opam-monorepo-duniverse-dirs: [
-  [
-    "https://erratique.ch/software/cmdliner/releases/cmdliner-1.1.1.tbz"
-    "cmdliner"
-    [
-      "sha512=5478ad833da254b5587b3746e3a8493e66e867a081ac0f653a901cc8a7d944f66e4387592215ce25d939be76f281c4785702f54d4a74b1700bc8838a62255c9e"
-    ]
-  ]
   [
     "https://github.com/OCamlPro/ocplib-endian/archive/refs/tags/1.2.tar.gz"
     "ocplib-endian"
@@ -636,6 +635,14 @@ x-opam-monorepo-duniverse-dirs: [
     [
       "sha256=c6a34311946ff906824cedc2d12825ee9ad73b73bfa1581fb8100d6fc3dd5c35"
       "sha512=5a1422809050dfbebab9691f29109e8219e27ecc4bc50c2eb714dc59036811936e9c5860b13583ab0ba7c15a00ee5b515af25642cdc312a4814076d8e76e3fd7"
+    ]
+  ]
+  [
+    "https://github.com/dune-universe/cmdliner/releases/download/v1.2.0%2Bdune/cmdliner-1.2.0.dune.tbz"
+    "cmdliner"
+    [
+      "sha256=84358d8e1f373f38a466418bf707109989417d5eb6a3b26e51030ea893a23f7b"
+      "sha512=c921bb960598ba9a33e93c3a4efd0ca13578f3c8033c0cb2323e7416ed2404ca65fa467631a8e8138708bb6f4b0690747a7eb22d59c5b4dec7ea2e2b77f751e4"
     ]
   ]
   [
@@ -757,9 +764,9 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/inhabitedtype/angstrom/archive/0.15.0.tar.gz"
+    "https://github.com/inhabitedtype/angstrom/archive/0.16.0.tar.gz"
     "angstrom"
-    ["md5=5104768c404ea92fd0a53a5b0f75cd50"]
+    ["md5=58ebc718a920c31ec3eb38f4aa1bea51"]
   ]
   [
     "https://github.com/inhabitedtype/bigstringaf/archive/0.9.1.tar.gz"
@@ -811,11 +818,11 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/mirage/digestif/releases/download/v1.1.4/digestif-1.1.4.tbz"
+    "https://github.com/mirage/digestif/releases/download/v1.2.0/digestif-1.2.0.tbz"
     "digestif"
     [
-      "sha256=c3793e720f0da8054f6286c545c821a7febe882e7f4e5497ec89b15a353511e1"
-      "sha512=a4014f65a3be370761833fd98f3916d0a64ada6f99ac016890f5ae98ec75a941836a5a1e145ae36372aeb6b48c66a0ad9907a4318bfc8dc0c237840edba1aef4"
+      "sha256=c30168cafe279a665367806b3e5e6398fd7474f1e5260e76826d5ec9d3b2a508"
+      "sha512=1a4d6ff31fa59d99548cf21a3cedbb0cdb2000d890fcb1c4633eda2723ea6157b10b7dfd089411d51e2d6f653466875efa7aed9807055ecdd3df24ec8d72c234"
     ]
   ]
   [
@@ -843,11 +850,11 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/mirage/irmin/releases/download/3.8.0/irmin-3.8.0.tbz"
+    "https://github.com/mirage/irmin/releases/download/3.9.0/irmin-3.9.0.tbz"
     "irmin"
     [
-      "sha256=da4017e6719cee86fab83f8d9a93e3cc3c54ca653703329a0f345712a9f72972"
-      "sha512=d58b0708ba20962b4d3096c32233635e3b741753698694411d8496ef37da39968bc173fa92d305032126f967e1ccec79a267900f58516878592e61404726516c"
+      "sha256=8e073abe1b5ffb5b6d58c32606c9d7dabc32c53501756be80a92ed4777ad51a0"
+      "sha512=70769a8d36520626fecd6f68e5f3abe6a0d67a65af915312206cc3f4da230df48512faee178aa6e899d3fb640b9340f6c92486185be5432a1a1a161c70386c99"
     ]
   ]
   [
@@ -859,11 +866,11 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/mirage/mirage-crypto/releases/download/v0.11.2/mirage-crypto-0.11.2.tbz"
+    "https://github.com/mirage/mirage-crypto/releases/download/v0.11.3/mirage-crypto-0.11.3.tbz"
     "mirage-crypto"
     [
-      "sha256=d6b97cb7f0dc344a602513cc03137c1e7f0ae105d0721614626cf4f231edf764"
-      "sha512=7ab8824730d09bfb4c82a290860e96c8a722456084806741c773ab8d30c983d2061a3f79484debf5fa9bd1c75a0738bd8913b0539743e61245ad172844572b9e"
+      "sha256=bfb530fa169cd905ebc7e2449f3407cfbd67023ac0b291b8b6f4a1437a5d95b1"
+      "sha512=7b6f4e8128622b53eb2176881b5d6160f224e8606c7dd21aaf47974f15db7aa475cffaff3214aaaabba0f8986398f159c1fbb1bff29228c9b0a3fae67ef8d731"
     ]
   ]
   [
@@ -891,11 +898,11 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/mirage/ocaml-conduit/releases/download/v6.2.0/conduit-6.2.0.tbz"
+    "https://github.com/mirage/ocaml-conduit/releases/download/v6.2.1/conduit-6.2.1.tbz"
     "ocaml-conduit"
     [
-      "sha256=3ed440b0edda1b212dd762bdb24831f394dca05985dd1b4ac4f94581d1452394"
-      "sha512=017a28bd9873ea7f49ce69e9f4b680df7fa17440b1ff68c2af880df5527fae205249667fa7d35e4a8fe8d101081b6f7d6a384bee1eb0f6f38a2c57beae56aaac"
+      "sha256=59d5e7b62437be489b0b79ce11ff90ac04ef39c683e4cefca8587afdc2f55bbb"
+      "sha512=c8e12d843d73cc776850f1b77e805380ac64f6c81b7bc4516befdeacf4785aeb638a0ccc62d7c1990c66edda6bf679c59c93210ffefeafed9a5fa3ec1bfedeca"
     ]
   ]
   [
@@ -923,19 +930,19 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/mirage/ocaml-magic-mime/releases/download/v1.3.0/magic-mime-1.3.0.tbz"
+    "https://github.com/mirage/ocaml-magic-mime/releases/download/v1.3.1/magic-mime-1.3.1.tbz"
     "ocaml-magic-mime"
     [
-      "sha256=d835948a288d7efd9c49e1958b9f54260769ff4a0eb1f0829541876622f7cd9c"
-      "sha512=15da02dcd044805401454cca25cf4b564ffcf1cd929f7422fd43c7911e3c20f6e456bd49be4c1916b706104a1f4acc5bb06c7e52bf6b8cc8895c519a0a0ac051"
+      "sha256=e0234d03625dba1efac58e57e387672d75a5e9a621ff49acfe0f609c00f13b08"
+      "sha512=607f7469caa2e800a92e3c5248125108fad5e0513f4230a37ed774c86112eacdae0ee533c5c78ec2752e939e83e2201dd4ee02cbbff92ae32e25683710d7b365"
     ]
   ]
   [
-    "https://github.com/mirage/ocaml-uri/releases/download/v4.2.0/uri-v4.2.0.tbz"
+    "https://github.com/mirage/ocaml-uri/releases/download/v4.4.0/uri-4.4.0.tbz"
     "ocaml-uri"
     [
-      "sha256=c5c013d940dbb6731ea2ee75c2bf991d3435149c3f3659ec2e55476f5473f16b"
-      "sha512=119e39bf53db9e94383a4e3a3df492b60b2db097266b3a8660de431ad85bc87997718305972fd2abbfb529973475ce6b210ba5e34d12e85a5dabbb0e24130aa1"
+      "sha256=cdabaf6ef5cd2161e59cc7b74c6e4a68ecb80a9f4e96002e338e1b6bf17adec4"
+      "sha512=88374143e0d8aaf6d40aa3cbd7593f9832e9c9727738c6e651498125150c83d5646e13b5737d5c3e81484dd041127f67f8acea13fdc0300ac4e46107559f8ae2"
     ]
   ]
   [
@@ -979,11 +986,11 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/ocaml-community/yojson/releases/download/2.1.0/yojson-2.1.0.tbz"
+    "https://github.com/ocaml-community/yojson/releases/download/2.1.2/yojson-2.1.2.tbz"
     "yojson"
     [
-      "sha256=9fcb1ff2db58ab259f9228796b0ada4794eae97177b1833371380c4e4f90b15d"
-      "sha512=31ab8580e0e4e8a05459fbec2fb9424a3df4cf5aef6df21fc577dbe3d32e81103a632c6a511c4dcf1f51819e88b38d2ce7d6888545bc3f359e69e070f8d2e69c"
+      "sha256=59f2f1abbfc8a7ccbdbf608894e5c75e8a76006e34899254446f83e200dfb4f9"
+      "sha512=309cba7568dec51de20c7ab8df033258c275b8d58b0a36a66b26e673a3bc050cbd7e39ff8fe4796e89263e125bcc21e04dc36a394f3cc201956887eee1fb281a"
     ]
   ]
   [
@@ -995,35 +1002,35 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/ocaml-multicore/domain-local-await/releases/download/1.0.0/domain-local-await-1.0.0.tbz"
+    "https://github.com/ocaml-multicore/domain-local-await/releases/download/1.0.1/domain-local-await-1.0.1.tbz"
     "domain-local-await"
     [
-      "sha256=2a28d683489349da9bc245dde4aaf7ffde2eac39bc405498da53261a352ec46a"
-      "sha512=dba7f1d3053f711f3d4887acbc8f30abd5b26c379321aa2247b3162919bae4b28e8de8b687f815c478cfbb58ee438597a94968cfe10e7f0a0a1aaad88cfeb13c"
+      "sha256=2952113c53cb07e2b054b2dc86ce72939131dab8207c8f3139adb23e64cdfa6f"
+      "sha512=6f9805fc032f8afcfba2b0df11b48482c6af14d63f825b09e49e31f9cfc1b196c74981a5b4682ca862e300f9a931b16c6396bd7921513add586df98ba9958ec5"
     ]
   ]
   [
-    "https://github.com/ocaml-multicore/eio/releases/download/v0.12/eio-0.12.tbz"
+    "https://github.com/ocaml-multicore/eio/releases/download/v1.0/eio-1.0.tbz"
     "eio"
     [
-      "sha256=d84847ce85ffb78641496ad24be3c6ab5cc2c6885cedad6ae257ecac59d926a0"
-      "sha512=fbcbc8e7e8eaaeacd6c7b3be04fec19b356f900307b2cc1bf6c1cd6bd538c4ea59ab2c7d936fac00c52a3277737671759f1584025c24e0a7727447609c633821"
+      "sha256=da260d9da38b3dde9f316652a20b13a261cf90b85a2498ac669b7d564e61942d"
+      "sha512=5886e1159f48ede237769baa1d8b5daafa0310e4192d7fe0e8c32aef70f2b6378cef72d0fbae308457e25d87a69802b9ee83a5e8f23e0591d83086a92d701c46"
     ]
   ]
   [
-    "https://github.com/ocaml-multicore/lwt_eio/releases/download/v0.5/lwt_eio-0.5.tbz"
+    "https://github.com/ocaml-multicore/lwt_eio/releases/download/v0.5.1/lwt_eio-0.5.1.tbz"
     "lwt_eio"
     [
-      "sha256=4a39fe8a401ebe02f15d0b075616fc95ae7f48cdb8ab198a4fe4e577477224b7"
-      "sha512=465a87ae097121260bcc9e178a618613e9b98c8868cb1023b90168fa5e408e410a054f699a2c912cd39cacdb6cdf64d3c6145ac259e39e85f3ace4dda27b2afc"
+      "sha256=76526784787854d3bad0d64966a7351d2f303d1f795a175e0494cadfba4f6c21"
+      "sha512=ce4cca67b484869220b5e3a5f5b8ba77fc8baf4dd7bdf020eaf7bb797d6c116d7c89848c6375d03e2e437faf67e65508baee741e39c84062b69a41a1947c4448"
     ]
   ]
   [
-    "https://github.com/ocaml-multicore/ocaml-uring/releases/download/v0.7/uring-0.7.tbz"
+    "https://github.com/ocaml-multicore/ocaml-uring/releases/download/v0.8/uring-0.8.tbz"
     "ocaml-uring"
     [
-      "sha256=921c55f1a658bdda981a36f56b6ec943e2bcca0ece24de338894f68733481503"
-      "sha512=56f445ea25b7de37cab566931a2edbbf090b8a19a5d81350a157019400c476cb75daa11a7296aaffa6a5ec350cf851b364638b4c806586734616f2c71891880f"
+      "sha256=e0e1acb75f6fa84cee355c4ee71c6dcd2fa6122944045a0473b942de3dec4e4e"
+      "sha512=8a848385ebd8ecf22ae53c25bcdaec1ddb4ba4c271434286c770ae2f32e52a9c34ba1b09719238cf2b76fcc887f0f790a824e981158313ff806a41456370f03b"
     ]
   ]
   [
@@ -1056,19 +1063,19 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/ocaml-ppx/ppxlib/releases/download/0.30.0/ppxlib-0.30.0.tbz"
+    "https://github.com/ocaml-ppx/ppxlib/releases/download/0.32.0/ppxlib-0.32.0.tbz"
     "ppxlib"
     [
-      "sha256=dd4a63bde9d29b49810e04d7653937c932f177a941ca0e1982b6ad53ac442110"
-      "sha512=0a8c4fa894aaf445cb93213eaa32afb2772235da44aa28c917aba237731a44d5c2687bd960fca49bff62bbe0f9b3fdd9c15730313b429214ae281069f862ffdc"
+      "sha256=507cc73ccf895f22eeb5257a2243838c18a38a09105fcff55eeef9148555422b"
+      "sha512=73fef8ab8761bfbfde6ae87cc51eaacc5a5c937f0d628a890f0abdb2bffbf073932c25287a9e3baa2a1947c37f3dfa7f83ddd33c440e2e800971015addc97cd2"
     ]
   ]
   [
-    "https://github.com/ocaml/dune/releases/download/3.10.0/dune-3.10.0.tbz"
+    "https://github.com/ocaml/dune/releases/download/3.15.0/dune-3.15.0.tbz"
     "dune_"
     [
-      "sha256=9ff03384a98a8df79852cc674f0b4738ba8aec17029b6e2eeb514f895e710355"
-      "sha512=8133cdcc5499a6bf21cd65b4fc8b12445ae39366731006773fcd3b348c553a8d89d004db161c655aa167a2a3653b7919d32b27f29217106ef762bd01b43afc76"
+      "sha256=b5c3d10f6f6048bfaf56fc4f0942d56381b55af4287caf8251487d4c4e7920d7"
+      "sha512=b3944b47c7ab1b2109aabc73dab7b9227765168bdcaddda875f3ee3c8277825f4a2672fbba903bf54ea507d00c7649c7dfc3c3bb156365d3052e570cf02caa82"
     ]
   ]
   [
@@ -1120,17 +1127,17 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
   [
-    "https://github.com/whitequark/ocaml-inotify/archive/v2.4.1.tar.gz"
+    "https://github.com/whitequark/ocaml-inotify/releases/download/v2.5/inotify-2.5.tbz"
     "ocaml-inotify"
     [
-      "md5=5bb1c5754d305acf9c1f10611f49aae2"
-      "sha512=3e114ee0e8b5b9c7c996df0d2cd8f03e0efdfb9837c1990f98c256868c0e2ad275f91be1adcfbbbcf1bdab801f18e82efa483510d2566e0d12cb303dfc91e4e5"
+      "sha256=829aec332ccb46f61876b23c38059afcf7802516d3697c1aa15e1916be72114b"
+      "sha512=3dea21ae119cb9c524e9b4a2d3b324d8d46df41bda57c32b11563802646ac2be37b76f629f0c5fd8fc3635684feea8f1abaf7d4efd8b2b5c3618a5d935aa94b1"
     ]
   ]
   [
-    "https://github.com/yallop/ocaml-ctypes/archive/refs/tags/0.21.1.tar.gz"
+    "https://github.com/yallop/ocaml-ctypes/archive/refs/tags/0.22.0.tar.gz"
     "ocaml-ctypes"
-    ["md5=8b201d932741c5096854e5eb39139b90"]
+    ["md5=8a301a3e3b79156448a6659859ad506c"]
   ]
   [
     "https://github.com/yallop/ocaml-integers/archive/0.7.0.tar.gz"

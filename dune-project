@@ -33,7 +33,7 @@
    fmt
    logs
    websocket
-   cmdliner
+   (cmdliner (>= "1.0.0"))
    yojson
    ctypes
    ctypes-foreign
