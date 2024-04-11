@@ -41,7 +41,14 @@ jobs:
           ocaml-compiler: '${{ matrix.ocaml-compiler }}'
       - run: opam install . --deps-only -y
       - name: 'Make release'
-        run: opam exec -- make release TARGET=${{ matrix.target }}
+        run: |
+          version="${{ github.ref }}"
+          if [[ "$version" = "refs/heads/main" ]]; then
+            version="main"
+          else
+            version="${version/refs\/tags\/v/}"
+          fi
+          opam exec -- make release VERSION=${version} TARGET=${{ matrix.target }}
       - name: Upload Artifact to Release
         uses: softprops/action-gh-release@v1
         with:
