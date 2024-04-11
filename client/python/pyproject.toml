@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "wasmstore"
-version = "0.2.0"
+version = "0.3.0"
 description = "Wasmstore client for Python"
 authors = ["Dylibso <oss@dylib.so>"]
 license = "BSD-3-Clause"
