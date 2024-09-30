@@ -18,7 +18,7 @@
 
 open Lwt.Infix
 open Websocket
-module Lwt_IO = Websocket.Make (Cohttp_lwt_unix.Private.IO)
+module Lwt_IO = Websocket.Make (Cohttp_lwt_unix.IO)
 
 let send_frames stream oc =
   let buf = Buffer.create 128 in
